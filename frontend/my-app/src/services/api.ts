@@ -2,6 +2,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { ApiResponse, User, Api } from "../types";
 import { baseQueryWithReauth } from "./baseQuery";
+import { ReactNode } from "react";
 
 export const api = createApi({
   reducerPath: "api",
@@ -69,7 +70,12 @@ export const api = createApi({
       providesTags: ["Api"],
     }),
     
-    getApiById: builder.query<ApiResponse<{ api: Api }>, string>({
+    getApiById: builder.query<ApiResponse<{
+        name: ReactNode;
+        method: ReactNode;
+        pricePerRequest: ReactNode;
+        callCount: ReactNode; api: Api 
+}>, string>({
       query: (id) => `/apis/${id}`,
       providesTags: ["Api"],
     }),
