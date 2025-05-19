@@ -10,7 +10,7 @@ import {
 
 const UserDashboard = () => {
   const { data: meData, isLoading: isMeLoading, isError: isMeError } = useMeQuery();
-
+console.log(meData)
   const subscribedApiIds = useMemo(() => {
     return meData?.data?.subscribedApis || [];
   }, [meData]);

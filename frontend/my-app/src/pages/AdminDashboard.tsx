@@ -27,6 +27,7 @@ const AdminDashboard = () => {
  const {
   data: apiDetailResponse,
   isLoading: isDetailLoading,
+  error: apiDetailError
 } = useGetApiByIdQuery(selectedApiId ?? "", {
   skip: !selectedApiId,
 });
@@ -36,9 +37,10 @@ const AdminDashboard = () => {
   allApisResponse && Array.isArray(allApisResponse.data)
     ? allApisResponse.data
     : [];
-  const api = apiDetailResponse?.data?.api;
+  const api = apiDetailResponse?.data;
   console.log("API Detail Response", apiDetailResponse);
   console.log("API Detail", api);
+  console.log("API Detail Error", apiDetailError);
 
   if (isApisLoading) return <Typography>Loading APIs...</Typography>;
 
@@ -108,28 +110,32 @@ const AdminDashboard = () => {
         <DialogContent>
           {isDetailLoading ? (
             <Typography>Loading...</Typography>
+          ) : apiDetailError ? (
+            <Typography color="error">Error loading API details</Typography>
+          ) : !api ? (
+            <Typography>No API details found</Typography>
           ) : (
             <>
-              <Typography variant="subtitle1">Name: {api?.name}</Typography>
-              <Typography>Description: {api?.description}</Typography>
-              <Typography>Method: {api?.method}</Typography>
-              <Typography>Endpoint: {api?.endpoint}</Typography>
+              <Typography variant="subtitle1">Name: {api.name}</Typography>
+              <Typography>Description: {api.description}</Typography>
+              <Typography>Method: {api.method}</Typography>
+              <Typography>Endpoint: {api.endpoint}</Typography>
               <Typography>
-                Price per Request: {api?.pricePerRequest}
+                Price per Request: {api.pricePerRequest}
               </Typography>
-              <Typography>Total Calls: {api?.callCount}</Typography>
+              <Typography>Total Calls: {api.callCount}</Typography>
               <Typography>
-                Subscribers: {api?.subscribedUsers?.length}
+                Subscribers: {api.subscribedUsers?.length}
               </Typography>
               <Typography>
                 Created At:{" "}
-                {api?.createdAt
+                {api.createdAt
                   ? new Date(api.createdAt).toLocaleString()
                   : ""}
               </Typography>
               <Typography>
                 Updated At:{" "}
-                {api?.updatedAt
+                {api.updatedAt
                   ? new Date(api.updatedAt).toLocaleString()
                   : ""}
               </Typography>
