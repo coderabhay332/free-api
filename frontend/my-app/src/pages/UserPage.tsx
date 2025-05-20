@@ -24,6 +24,19 @@ const ApiDetailsSkeleton = () => (
   </div>
 );
 
+// Wallet Balance Component
+const WalletBalance: React.FC<{ credit: number }> = ({ credit }) => (
+  <Card>
+    <Space align="center">
+      <WalletOutlined style={{ fontSize: '24px' }} />
+      <Title level={4} style={{ margin: 0 }}>
+        Wallet Balance: {credit} credits
+      </Title>
+    </Space>
+  </Card>
+);
+
+// Main Component
 const UserPage: React.FC = () => {
   const { data: apisData, isLoading: isLoadingApis, error: apisError, refetch } = useGetAllApisQuery();
   const { data: userData, isLoading: isLoadingUser, refetch: refetchUserData } = useMeQuery();
@@ -141,9 +154,7 @@ const UserPage: React.FC = () => {
     return (
       <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <Card>
-            <Skeleton active paragraph={{ rows: 1 }} />
-          </Card>
+          <ApiCardSkeleton />
           <Title level={3}>Available APIs</Title>
           <Row gutter={[16, 16]}>
             {[1, 2, 3, 4].map((key) => (
@@ -162,14 +173,7 @@ const UserPage: React.FC = () => {
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card>
-          <Space align="center">
-            <WalletOutlined style={{ fontSize: '24px' }} />
-            <Title level={4} style={{ margin: 0 }}>
-              Wallet Balance: {userData?.data?.credit || 0} credits
-            </Title>
-          </Space>
-        </Card>
+        <WalletBalance credit={userData?.data?.credit || 0} />
 
         <Title level={3}>Available APIs</Title>
         

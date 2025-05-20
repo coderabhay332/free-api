@@ -22,6 +22,7 @@ import {
   TextField,
   MenuItem,
   Alert,
+  Snackbar,
 } from "@mui/material";
 import { Api } from "../types";
 import InfoIcon from "@mui/icons-material/Info";
@@ -34,6 +35,7 @@ const AdminDashboard = () => {
   const {
     data: allApisResponse,
     isLoading: isApisLoading,
+    refetch
   } = useGetAllApisQuery();
 
   const [createApi] = useCreateApiMutation();
@@ -49,12 +51,15 @@ const AdminDashboard = () => {
   });
   const [error, setError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showSuccess, setShowSuccess] = React.useState(false);
 
   const handleCreateApi = async () => {
     try {
       setError(null);
       setIsSubmitting(true);
-      await createApi(newApi).unwrap();
+      const result = await createApi(newApi).unwrap();
+      await refetch();
+      setShowSuccess(true);
       setIsCreateDialogOpen(false);
       setNewApi({
         name: "",
@@ -68,6 +73,10 @@ const AdminDashboard = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCloseSuccess = () => {
+    setShowSuccess(false);
   };
 
   const {
@@ -100,6 +109,13 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={6000}
+        onClose={handleCloseSuccess}
+        message="API created successfully!"
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4">Admin Dashboard</Typography>
         <Button

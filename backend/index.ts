@@ -9,6 +9,8 @@ import { initDB } from "./src/common/services/database.services";
 import { initPassport } from "./src/common/services/passport-jwt.services";
 import routes from "./src/routes";
 import { type IUser } from "./src/user/user.dto";
+import swaggerUi from "swagger-ui-express";
+import swaggerDocument from "./src/swagger/swagger";
 
 
 declare global {
@@ -47,6 +49,8 @@ declare global {
     // set base path to /api
   
     app.use("/api", routes);
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
   
   
     app.get("/", (req: Request, res: Response) => {
