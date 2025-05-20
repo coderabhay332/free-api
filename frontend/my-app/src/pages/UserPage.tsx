@@ -71,9 +71,16 @@ const UserPage: React.FC = () => {
       return;
     }
 
+    let hasInsufficientCredits = false;
     if (userData.data.credit < selectedApiData.data.pricePerRequest) {
-      message.error(`Insufficient credits. Required: ${selectedApiData.data.pricePerRequest}, Available: ${userData.data.credit}`);
-      return;
+      hasInsufficientCredits = true;
+      message.error({
+        content: `Insufficient credits! You need ${selectedApiData.data.pricePerRequest} credits to make this request. Your current balance: ${userData.data.credit} credits.`,
+        duration: 5,
+        style: {
+          marginTop: '20vh',
+        },
+      });
     }
 
     setIsTesting(true);
@@ -88,7 +95,9 @@ const UserPage: React.FC = () => {
         refetchUserData(),
         refetch()
       ]);
-      message.success('API test successful');
+      if (!hasInsufficientCredits) {
+        message.success('API test successful');
+      }
     } catch (error: any) {
       console.error('Test error:', error);
       const errorMessage = error.data?.message || 'Failed to test API endpoint';
@@ -98,7 +107,7 @@ const UserPage: React.FC = () => {
         message: errorMessage,
         data: error.data?.data
       });
-    } finally { 
+    } finally {
       setIsTesting(false);
     }
   };
