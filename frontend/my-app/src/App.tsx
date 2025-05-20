@@ -5,14 +5,16 @@ import { Routes, Route } from 'react-router-dom';
 import LoginForm from './pages/login';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
+import RegisterForm from './pages/Register';
 import UserPage from './pages/UserPage';
+
 function App() {
   return (
     <Routes> 
-      <Route path="/" element={<LoginForm />} />
-      <Route path="/dashboard" element={<AdminDashboard />} />
+      <Route path="/login" element={<LoginForm />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/user" element={<UserDashboard />} />
-      <Route path="/user/:id" element={<UserPage />} />
+      <Route path="/user/dashboard" element={<UserPage />} />
     </Routes>
   );
 }
