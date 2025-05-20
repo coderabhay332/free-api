@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ant-design/icons": "^6.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hookform/resolvers": "^5.0.1",
@@ -19,6 +20,7 @@
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
     "@types/react-router-dom": "^5.3.3",
+    "antd": "^5.25.2",
     "formik": "^2.4.6",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",

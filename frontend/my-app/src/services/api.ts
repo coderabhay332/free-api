@@ -70,14 +70,26 @@ export const api = createApi({
       providesTags: ["Api"],
     }),
     
-    getApiById: builder.query<ApiResponse<{
-        name: ReactNode;
-        method: ReactNode;
-        pricePerRequest: ReactNode;
-        callCount: ReactNode; api: Api 
-}>, string>({
+    getApiById: builder.query<ApiResponse<Api>, string>({
       query: (id) => `/apis/${id}`,
       providesTags: ["Api"],
+    }),
+
+    subscribeToApi: builder.mutation<ApiResponse<Api>, string>({
+      query: (id) => ({
+        url: `/apis/subscribe/${id}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Api"],
+    }),
+
+    testApiEndpoint: builder.mutation<ApiResponse<any>, { apiId: string; endpoint: string }>({
+      query: ({ apiId, endpoint }) => ({
+        url: `/apis/${apiId}/test`,
+        method: "POST",
+        body: { endpoint },
+      }),
+      invalidatesTags: ["Api"],
     }),
   }),
 });
@@ -90,5 +102,7 @@ export const {
   useRefreshTokenMutation,
   useCreateApiMutation,
   useGetAllApisQuery,
-  useGetApiByIdQuery
+  useGetApiByIdQuery,
+  useSubscribeToApiMutation,
+  useTestApiEndpointMutation
 } = api;
