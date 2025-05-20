@@ -7,14 +7,15 @@ import * as apiController from "./api.controller";
 const router = Router();
 
 
-router.post("/create", roleAuth(["ADMIN"]), catchError, apiController.createApi);
+router
+.post("/create", roleAuth(["ADMIN"]), catchError, apiController.createApi)
 
-router.get("/all", roleAuth(["ADMIN", "USER"]), catchError, apiController.getAllApis);
+.get("/all", roleAuth(["ADMIN", "USER"]), catchError, apiController.getAllApis)
+.post("/demo/:id", roleAuth(["ADMIN", "USER"]), catchError, apiController.demoApi)
+
+.get("/:id", roleAuth(["ADMIN", "USER"]), catchError, apiController.getApiById)
 
 
-router.get("/:id", roleAuth(["ADMIN", "USER"]), catchError, apiController.getApiById);
-
-
-router.post("/subscribe/:id", roleAuth(["USER", "ADMIN"]), catchError, apiController.subscribeApi);
+.post("/subscribe/:id", roleAuth(["USER", "ADMIN"]), catchError, apiController.subscribeApi);
 
     export default router;

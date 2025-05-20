@@ -65,12 +65,6 @@ const UserPage: React.FC = () => {
       return;
     }
 
-    // Validate that the test endpoint matches the API's endpoint
-    if (testEndpoint !== selectedApiData.data.endpoint) {
-      message.error(`Please use the correct endpoint: ${selectedApiData.data.endpoint}`);
-      return;
-    }
-
     // Check if user has enough credits
     if (!userData?.data) {
       message.error('User data not available');
@@ -84,38 +78,27 @@ const UserPage: React.FC = () => {
 
     setIsTesting(true);
     try {
-      // Make the actual API request using axios
-      const response = await axios({
-        method: selectedApiData.data.method,
-        url: testEndpoint,
-        headers: {
-          'Content-Type': 'application/json',
-          // Add any required headers from the API
-        },
-        // Add any required data for POST/PUT requests
-        data: selectedApiData.data.method !== 'GET' ? {} : undefined,
-      });
-
-      // Update user's credit after successful request
-      await refetchUserData();
+      const result = await testApiEndpoint({ 
+        apiId,
+        endpoint: selectedApiData.data.endpoint
+      }).unwrap();
       
-      setTestResult({
-        data: response.data,
-        status: response.status,
-        headers: response.headers
-      });
-      
+      setTestResult(result.data);
+      await Promise.all([
+        refetchUserData(),
+        refetch()
+      ]);
       message.success('API test successful');
     } catch (error: any) {
       console.error('Test error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to test API endpoint';
+      const errorMessage = error.data?.message || 'Failed to test API endpoint';
       message.error(errorMessage);
       setTestResult({
         error: true,
         message: errorMessage,
-        data: error.response?.data
+        data: error.data?.data
       });
-    } finally {
+    } finally { 
       setIsTesting(false);
     }
   };
