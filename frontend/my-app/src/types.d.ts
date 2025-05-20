@@ -29,7 +29,7 @@ export interface User {
   role: string;
   plan; string;
   subscribedApis: Types.ObjectId[];
-  credits: number;
+  credit: number;
   createdAt: string;
   updatedAt: string;
 }

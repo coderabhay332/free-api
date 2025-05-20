@@ -1,6 +1,7 @@
 import apiSchema from "./api.schema"
 import userSchema from "../user/user.schema";
 import axios from "axios";
+import { Types } from "mongoose";
 
 export const createApi = async (name: string, description: string, endpoint: string, method: string, pricePerRequest: number) => {
     const api = await apiSchema.create({
@@ -112,4 +113,25 @@ export const analyzeApi = async (userId: string, apiId: string) => {
 
     const api = await apiSchema.findById(apiId).populate("createdBy", "name email").populate("updatedBy", "name email").populate("subscribedUsers", "name email");
     return api;
+}
+
+export const subscribeApi = async (userId: string, apiId: string) => {
+    const apiDoc = await apiSchema.findById(apiId);
+    if (!apiDoc) throw new Error("API not found");
+    const user = await userSchema.findById(userId);
+    if (!user) throw new Error("User not found");
+
+    if(user.subscribedApis.includes(new Types.ObjectId(apiId))) {
+        throw new Error("User already subscribed to this API");
+    }
+    if (user.credit < apiDoc.pricePerRequest) {
+        throw new Error("Insufficient credit");
+    }
+
+    // Update both user and API documents
+    user.subscribedApis.push(new Types.ObjectId(apiId));
+    apiDoc.subscribedUsers.push(new Types.ObjectId(userId));
+    
+    await Promise.all([user.save(), apiDoc.save()]);
+    return apiDoc;
 }

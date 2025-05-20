@@ -71,3 +71,10 @@ export const analyzeApi = asyncHandler(async (req: Request, res: Response) => {
 }
 );
 
+export const subscribeApi = asyncHandler(async (req: Request, res: Response) => {
+  const apiId = req.params.id;
+  const userId = (req.user as any)?.id;
+  const result = await apiService.subscribeApi(userId, apiId);
+  res.send(createResponse(result, "API subscribed successfully"));
+}
+);

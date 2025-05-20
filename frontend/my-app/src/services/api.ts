@@ -1,6 +1,6 @@
 // services/api.ts
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { ApiResponse, User, Api } from "../types";
+import { ApiResponse, User, Api, ApiListResponse } from "../types";
 import { baseQueryWithReauth } from "./baseQuery";
 import { ReactNode } from "react";
 
@@ -65,7 +65,7 @@ export const api = createApi({
       }),
     }), 
     
-    getAllApis: builder.query<ApiResponse<{ apis: Api[] }>, void>({
+    getAllApis: builder.query<ApiListResponse, void>({
       query: () => `/apis/all`,
       providesTags: ["Api"],
     }),
@@ -80,16 +80,16 @@ export const api = createApi({
         url: `/apis/subscribe/${id}`,
         method: "POST",
       }),
-      invalidatesTags: ["Api"],
+      invalidatesTags: ["Api", "User"],
     }),
 
     testApiEndpoint: builder.mutation<ApiResponse<any>, { apiId: string; endpoint: string }>({
       query: ({ apiId, endpoint }) => ({
-        url: `/apis/${apiId}/test`,
+        url: `/apis/demo/${apiId}`,
         method: "POST",
-        body: { endpoint },
+        body: { endpoint }
       }),
-      invalidatesTags: ["Api"],
+      invalidatesTags: ["Api", "User"],
     }),
   }),
 });

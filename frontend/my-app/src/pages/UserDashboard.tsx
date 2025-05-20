@@ -37,17 +37,17 @@ console.log(meData)
   }
 
   const user = meData.data;
-  const api = apiData?.data; // <-- corrected here
+  const api = apiData?.data; 
 
   return (
     <Box p={3}>
       <Typography variant="h4" gutterBottom>
         Welcome, {user.name}
       </Typography>
-
+   
       <Box mb={3}>
         <Typography>Email: {user.email}</Typography>
-        <Typography>Wallet: {user.credits} credits</Typography>
+        <Typography>Wallet: {user.credit} credits</Typography>
         <Typography>Role: {user.role}</Typography>
       </Box>
 

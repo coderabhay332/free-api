@@ -1,116 +1,224 @@
-import React, { useState } from 'react';
-import { useGetAllApisQuery, useSubscribeToApiMutation, useMeQuery, useTestApiEndpointMutation } from '../services/api';
-import { Card, Button, Typography, Space, Alert, Spin, Input, message } from 'antd';
-import { WalletOutlined, ApiOutlined } from '@ant-design/icons';
+import React, { useState, Suspense } from 'react';
+import { useGetAllApisQuery, useSubscribeToApiMutation, useMeQuery, useTestApiEndpointMutation, useGetApiByIdQuery } from '../services/api';
+import { Card, Button, Typography, Space, Alert, Spin, Input, message, Row, Col, Tag, Modal, Descriptions, Skeleton } from 'antd';
+import { WalletOutlined, ApiOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Api } from '../types';
+import axios from 'axios';
 
 const { Title, Text } = Typography;
 
+// Lazy load heavy components
+const ApiDetailsModal = React.lazy(() => import('../components/ApiDetailsModal'));
+const ApiCard = React.lazy(() => import('../components/ApiCard'));
+
+// Skeleton components
+const ApiCardSkeleton = () => (
+  <Card>
+    <Skeleton active avatar paragraph={{ rows: 4 }} />
+  </Card>
+);
+
+const ApiDetailsSkeleton = () => (
+  <div style={{ padding: '20px' }}>
+    <Skeleton active paragraph={{ rows: 8 }} />
+  </div>
+);
+
 const UserPage: React.FC = () => {
-  const { data: apisData, isLoading: isLoadingApis, error: apisError } = useGetAllApisQuery();
-  const { data: userData, isLoading: isLoadingUser } = useMeQuery();
+  const { data: apisData, isLoading: isLoadingApis, error: apisError, refetch } = useGetAllApisQuery();
+  const { data: userData, isLoading: isLoadingUser, refetch: refetchUserData } = useMeQuery();
   const [subscribeToApi] = useSubscribeToApiMutation();
   const [testApiEndpoint] = useTestApiEndpointMutation();
   const [selectedApi, setSelectedApi] = useState<string | null>(null);
   const [testEndpoint, setTestEndpoint] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
-  console.log('APIs Data:', apisData);
-  console.log('APIs Error:', apisError);
+  // Get detailed API information when an API is selected
+  const { data: selectedApiData, isLoading: isLoadingSelectedApi } = useGetApiByIdQuery(selectedApi ?? '', {
+    skip: !selectedApi,
+  });
 
-  const handleSubscribe = async (apiId: string) => {
+  const handleSubscribe = async (apiId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await subscribeToApi(apiId).unwrap();
+      await Promise.all([
+        refetchUserData(),
+        apisData?.data && apisData.data.length > 0 && refetch()
+      ]);
+      setIsModalVisible(false);
       message.success('Successfully subscribed to API');
     } catch (error) {
       message.error('Failed to subscribe to API');
     }
   };
 
-  const handleTestEndpoint = async (apiId: string) => {
+  const handleTestEndpoint = async (apiId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!selectedApiData?.data) {
+      message.error('API data not available');
+      return;
+    }
+
+    // Validate that the test endpoint matches the API's endpoint
+    if (testEndpoint !== selectedApiData.data.endpoint) {
+      message.error(`Please use the correct endpoint: ${selectedApiData.data.endpoint}`);
+      return;
+    }
+
+    // Check if user has enough credits
+    if (!userData?.data) {
+      message.error('User data not available');
+      return;
+    }
+
+    if (userData.data.credit < selectedApiData.data.pricePerRequest) {
+      message.error(`Insufficient credits. Required: ${selectedApiData.data.pricePerRequest}, Available: ${userData.data.credit}`);
+      return;
+    }
+
+    setIsTesting(true);
     try {
-      const result = await testApiEndpoint({ apiId, endpoint: testEndpoint }).unwrap();
-      setTestResult(result.data);
+      // Make the actual API request using axios
+      const response = await axios({
+        method: selectedApiData.data.method,
+        url: testEndpoint,
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any required headers from the API
+        },
+        // Add any required data for POST/PUT requests
+        data: selectedApiData.data.method !== 'GET' ? {} : undefined,
+      });
+
+      // Update user's credit after successful request
+      await refetchUserData();
+      
+      setTestResult({
+        data: response.data,
+        status: response.status,
+        headers: response.headers
+      });
+      
       message.success('API test successful');
-    } catch (error) {
-      message.error('Failed to test API endpoint');
+    } catch (error: any) {
+      console.error('Test error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to test API endpoint';
+      message.error(errorMessage);
+      setTestResult({
+        error: true,
+        message: errorMessage,
+        data: error.response?.data
+      });
+    } finally {
+      setIsTesting(false);
     }
   };
 
+  const showApiDetails = (apiId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedApi(apiId);
+    setIsModalVisible(true);
+    // Set the test endpoint to the API's endpoint when opening the modal
+    if (selectedApiData?.data) {
+      setTestEndpoint(selectedApiData.data.endpoint);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalVisible(false);
+    setSelectedApi(null);
+    setTestEndpoint('');
+    setTestResult(null);
+  };
+
+  // Update test endpoint when selectedApiData changes
+  React.useEffect(() => {
+    if (selectedApiData?.data) {
+      setTestEndpoint(selectedApiData.data.endpoint);
+    }
+  }, [selectedApiData]);
+
   if (isLoadingApis || isLoadingUser) {
-    return <Spin size="large" />;
+    return (
+      <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Card>
+            <Skeleton active paragraph={{ rows: 1 }} />
+          </Card>
+          <Title level={3}>Available APIs</Title>
+          <Row gutter={[16, 16]}>
+            {[1, 2, 3, 4].map((key) => (
+              <Col xs={24} sm={12} md={8} lg={6} key={key}>
+                <ApiCardSkeleton />
+              </Col>
+            ))}
+          </Row>
+        </Space>
+      </div>
+    );
   }
 
+  const isSubscribed = (apiId: string) => userData?.data?.subscribedApis?.includes(apiId) ?? false;
+
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Card>
           <Space align="center">
             <WalletOutlined style={{ fontSize: '24px' }} />
             <Title level={4} style={{ margin: 0 }}>
-              Wallet Balance: ${userData?.data?.credits || 0}
+              Wallet Balance: {userData?.data?.credit || 0} credits
             </Title>
           </Space>
         </Card>
 
         <Title level={3}>Available APIs</Title>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-          {apisData?.data?.apis?.length ? (
-            apisData.data.apis.map((api) => (
-              <Card
-                key={api._id}
-                title={api.name}
-                extra={
-                  <Button
-                    type="primary"
-                    onClick={() => handleSubscribe(api._id)}
-                    disabled={userData?.data?.subscribedApis?.includes(api._id)}
-                  >
-                    {userData?.data?.subscribedApis?.includes(api._id) ? 'Subscribed' : 'Subscribe'}
-                  </Button>
-                }
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Text>{api.description}</Text>
-                  <Text type="secondary">Price per request: ${api.pricePerRequest}</Text>
-                  <Text type="secondary">Method: {api.method}</Text>
-                  <Text type="secondary">Endpoint: {api.endpoint}</Text>
+        <Row gutter={[16, 16]}>
+          {apisData?.data?.map((api: Api) => (
+            <Col xs={24} sm={12} md={8} lg={6} key={api._id}>
+              <Suspense fallback={<ApiCardSkeleton />}>
+                <ApiCard
+                  api={api}
+                  isSubscribed={isSubscribed(api._id)}
+                  onSubscribe={(e) => handleSubscribe(api._id, e)}
+                  onShowDetails={(e) => showApiDetails(api._id, e)}
+                />
+              </Suspense>
+            </Col>
+          ))}
+        </Row>
 
-                  {userData?.data?.subscribedApis?.includes(api._id) && (
-                    <div style={{ marginTop: '16px' }}>
-                      <Input
-                        placeholder="Enter endpoint to test"
-                        value={testEndpoint}
-                        onChange={(e) => setTestEndpoint(e.target.value)}
-                        style={{ marginBottom: '8px' }}
-                      />
-                      <Button
-                        type="primary"
-                        onClick={() => handleTestEndpoint(api._id)}
-                        icon={<ApiOutlined />}
-                      >
-                        Test Endpoint
-                      </Button>
-                      {testResult && (
-                        <Alert
-                          style={{ marginTop: '8px' }}
-                          message="Test Result"
-                          description={JSON.stringify(testResult, null, 2)}
-                          type="info"
-                          showIcon
-                        />
-                      )}
-                    </div>
-                  )}
-                </Space>
-              </Card>
-            ))
-          ) : (
+        {(!apisData?.data || apisData.data.length === 0) && (
             <Card>
               <Text>No APIs available at the moment.</Text>
             </Card>
           )}
-        </div>
+
+        <Suspense fallback={<ApiDetailsSkeleton />}>
+          <ApiDetailsModal
+            visible={isModalVisible}
+            onClose={handleModalClose}
+            apiId={selectedApi}
+            apiData={selectedApiData?.data}
+            isLoading={isLoadingSelectedApi}
+            isSubscribed={selectedApi ? isSubscribed(selectedApi) : false}
+            onSubscribe={(e) => selectedApi && handleSubscribe(selectedApi, e)}
+            testEndpoint={testEndpoint}
+            onTestEndpointChange={setTestEndpoint}
+            onTest={(e) => selectedApi && handleTestEndpoint(selectedApi, e)}
+            isTesting={isTesting}
+            testResult={testResult}
+            userCredit={userData?.data?.credit || 0}
+          />
+        </Suspense>
       </Space>
     </div>
   );
