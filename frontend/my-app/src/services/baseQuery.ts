@@ -1,14 +1,15 @@
 // services/baseQuery.ts
 import { fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { RootState } from '../store/store';
-import { setTokens } from '../store/reducers/authReducer';
-import logout from '../store/reducers/authReducer';
+import { setTokens, resetTokens } from '../store/reducers/authReducer';
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: 'http://localhost:5000/api',
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.accessToken;
-    if (token) headers.set('Authorization', `Bearer ${token}`);
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
     return headers;
   },
   credentials: 'include', 
@@ -24,9 +25,14 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
     if (result.error && result.error.status === 401) {
       // Attempt refresh
       const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        api.dispatch(resetTokens());
+        return result;
+      }
+
       const refreshResult = await rawBaseQuery(
         {
-          url: '/refresh',
+          url: '/users/refresh',
           method: 'POST',
           body: { refreshToken },
         },
@@ -34,16 +40,19 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
         extraOptions
       );
   
-      if (refreshResult.data && (refreshResult.data as any).accessToken) {
-        const newAccessToken = (refreshResult.data as any).accessToken;
+      if (refreshResult.data && (refreshResult.data as any).data?.accessToken) {
+        const newAccessToken = (refreshResult.data as any).data.accessToken;
   
         // Save to localStorage and Redux
         localStorage.setItem('access_token', newAccessToken);
-        api.dispatch(setTokens({ accessToken: newAccessToken, refreshToken: refreshToken || '' }));
+        api.dispatch(setTokens({ accessToken: newAccessToken, refreshToken: refreshToken }));
   
         // Retry the original query
         result = await rawBaseQuery(args, api, extraOptions);
-      } 
+      } else {
+        // If refresh fails, logout
+        api.dispatch(resetTokens());
+      }
     }
   
     return result;

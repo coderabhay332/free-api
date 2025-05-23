@@ -1,5 +1,5 @@
 import React, { useState, Suspense } from 'react';
-import { useGetAllApisQuery, useSubscribeToApiMutation, useMeQuery, useTestApiEndpointMutation, useGetApiByIdQuery } from '../services/api';
+import { useGetAllApisQuery, useSubscribeToApiMutation, useMeQuery, useTestApiEndpointMutation, useGetApiByIdQuery, useGetDemoUsersMutation, useGetDemoProductsMutation, useGetDemoWeatherMutation, useGetDemoNewsMutation } from '../services/api';
 import { Card, Button, Typography, Space, Alert, Spin, Input, message, Row, Col, Tag, Modal, Descriptions, Skeleton } from 'antd';
 import { WalletOutlined, ApiOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { Api } from '../types';
@@ -7,7 +7,7 @@ import axios from 'axios';
 
 const { Title, Text } = Typography;
 
-// Lazy load heavy components
+
 const ApiDetailsModal = React.lazy(() => import('../components/ApiDetailsModal'));
 const ApiCard = React.lazy(() => import('../components/ApiCard'));
 
@@ -53,9 +53,45 @@ const UserPage: React.FC = () => {
     skip: !selectedApi,
   });
 
+  const [getDemoUsers] = useGetDemoUsersMutation();
+  const [getDemoProducts] = useGetDemoProductsMutation();
+  const [getDemoWeather] = useGetDemoWeatherMutation();
+  const [getDemoNews] = useGetDemoNewsMutation();
+
+  // Add credit check function
+  const checkCredit = (requiredCredit: number) => {
+    if (!userData?.data) {
+      message.error('User data not available');
+      return false;
+    }
+
+    if (userData.data.credit < requiredCredit) {
+      message.error({
+        content: `Insufficient credits! You need ${requiredCredit} credits. Your current balance: ${userData.data.credit} credits.`,
+        duration: 5,
+        style: {
+          marginTop: '20vh',
+        },
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleSubscribe = async (apiId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    const api = apisData?.data?.find(a => a._id === apiId);
+    if (!api) {
+      message.error('API not found');
+      return;
+    }
+
+    if (!checkCredit(api.pricePerRequest)) {
+      return;
+    }
+
     try {
       await subscribeToApi(apiId).unwrap();
       await Promise.all([
@@ -78,41 +114,36 @@ const UserPage: React.FC = () => {
       return;
     }
 
-    // Check if user has enough credits
-    if (!userData?.data) {
-      message.error('User data not available');
+    if (!userData?.data?.apiKey) {
+      message.error('No API key found. Please subscribe to an API first.');
       return;
     }
 
-    let hasInsufficientCredits = false;
-    if (userData.data.credit < selectedApiData.data.pricePerRequest) {
-      hasInsufficientCredits = true;
-      message.error({
-        content: `Insufficient credits! You need ${selectedApiData.data.pricePerRequest} credits to make this request. Your current balance: ${userData.data.credit} credits.`,
-        duration: 5,
-        style: {
-          marginTop: '20vh',
-        },
-      });
-    }
+    const apiUrl = `${selectedApiData.data.endpoint}?apiKey=${userData.data.apiKey}`;
+    setTestEndpoint(apiUrl);
+    message.info('API URL: ' + apiUrl);
 
     setIsTesting(true);
     try {
       const result = await testApiEndpoint({ 
         apiId,
-        endpoint: selectedApiData.data.endpoint
+        endpoint: apiUrl,
+        method: selectedApiData.data.method
       }).unwrap();
+      
+      if(result.data.message === "Insufficient credit"){
+        setTestResult("insufficient credits");
+        return;
+      }
       
       setTestResult(result.data);
       await Promise.all([
         refetchUserData(),
         refetch()
       ]);
-      if (!hasInsufficientCredits) {
-        message.success('API test successful');
-      }
+      message.success('API test successful');
     } catch (error: any) {
-      console.error('Test error:', error);
+      console.error('Test error details:', error);
       const errorMessage = error.data?.message || 'Failed to test API endpoint';
       message.error(errorMessage);
       setTestResult({
@@ -130,9 +161,10 @@ const UserPage: React.FC = () => {
     e.stopPropagation();
     setSelectedApi(apiId);
     setIsModalVisible(true);
-    // Set the test endpoint to the API's endpoint when opening the modal
-    if (selectedApiData?.data) {
-      setTestEndpoint(selectedApiData.data.endpoint);
+    if (selectedApiData?.data && userData?.data?.apiKey) {
+      const apiUrl = `${selectedApiData.data.endpoint}?apiKey=${userData.data.apiKey}`;
+      setTestEndpoint(apiUrl);
+      message.info('API URL: ' + apiUrl);
     }
   };
 
@@ -143,12 +175,12 @@ const UserPage: React.FC = () => {
     setTestResult(null);
   };
 
-  // Update test endpoint when selectedApiData changes
+ 
   React.useEffect(() => {
-    if (selectedApiData?.data) {
-      setTestEndpoint(selectedApiData.data.endpoint);
+    if (selectedApiData?.data && userData?.data?.apiKey) {
+      setTestEndpoint(`${selectedApiData.data.endpoint}?apiKey=${userData.data.apiKey}`);
     }
-  }, [selectedApiData]);
+  }, [selectedApiData, userData?.data?.apiKey]);
 
   if (isLoadingApis || isLoadingUser) {
     return (
@@ -168,7 +200,11 @@ const UserPage: React.FC = () => {
     );
   }
 
-  const isSubscribed = (apiId: string) => userData?.data?.subscribedApis?.includes(apiId) ?? false;
+  const isSubscribed = (apiId: string) => userData?.data?.subscribedApis?.some(sub => sub.api === apiId) ?? false;
+  const getSubscription = (apiId: string) => {
+    const sub = userData?.data?.subscribedApis?.find(sub => sub.api === apiId);
+    return sub && userData?.data?.apiKey ? { api: apiId, apiKey: userData.data.apiKey } : undefined;
+  };
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -176,7 +212,6 @@ const UserPage: React.FC = () => {
         <WalletBalance credit={userData?.data?.credit || 0} />
 
         <Title level={3}>Available APIs</Title>
-        
         <Row gutter={[16, 16]}>
           {apisData?.data?.map((api: Api) => (
             <Col xs={24} sm={12} md={8} lg={6} key={api._id}>
@@ -186,6 +221,7 @@ const UserPage: React.FC = () => {
                   isSubscribed={isSubscribed(api._id)}
                   onSubscribe={(e) => handleSubscribe(api._id, e)}
                   onShowDetails={(e) => showApiDetails(api._id, e)}
+                  subscription={getSubscription(api._id)}
                 />
               </Suspense>
             </Col>
@@ -193,10 +229,10 @@ const UserPage: React.FC = () => {
         </Row>
 
         {(!apisData?.data || apisData.data.length === 0) && (
-            <Card>
-              <Text>No APIs available at the moment.</Text>
-            </Card>
-          )}
+          <Card>
+            <Text>No APIs available at the moment.</Text>
+          </Card>
+        )}
 
         <Suspense fallback={<ApiDetailsSkeleton />}>
           <ApiDetailsModal
@@ -213,6 +249,7 @@ const UserPage: React.FC = () => {
             isTesting={isTesting}
             testResult={testResult}
             userCredit={userData?.data?.credit || 0}
+            subscription={selectedApi ? getSubscription(selectedApi) : undefined}
           />
         </Suspense>
       </Space>

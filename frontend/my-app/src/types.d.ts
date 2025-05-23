@@ -28,7 +28,12 @@ export interface User {
   password: string;
   role: string;
   plan; string;
-  subscribedApis: Types.ObjectId[];
+  apiKey: string;
+  subscribedApis: {
+    api: Types.ObjectId;
+   
+    hit: number;
+  }[];
   credit: number;
   createdAt: string;
   updatedAt: string;

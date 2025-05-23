@@ -38,7 +38,8 @@ const Register: React.FC<RegisterProps> = ({ switchToLogin }) => {
           email,
           password,
           confirmPassword,
-          string: undefined
+          apiKey: '',
+          string: ''  // Required by User type
       }).unwrap();
       navigate('/login'); // Redirect on success
     } catch (err: any) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Space, Typography, Tag } from 'antd';
+import { Card, Button, Space, Typography, Tag, Input, message } from 'antd';
 import { InfoCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Api } from '../types';
 
@@ -10,9 +10,12 @@ interface ApiCardProps {
   isSubscribed: boolean;
   onSubscribe: (e: React.MouseEvent) => void;
   onShowDetails: (e: React.MouseEvent) => void;
+  subscription?: { apiKey: string };
 }
 
-const ApiCard: React.FC<ApiCardProps> = ({ api, isSubscribed, onSubscribe, onShowDetails }) => {
+const ApiCard: React.FC<ApiCardProps> = ({ api, isSubscribed, onSubscribe, onShowDetails, subscription }) => {
+  const apiUrl = subscription ? `${api.endpoint}?apiKey=${subscription.apiKey}` : null;
+
   return (
     <Card
       hoverable
@@ -51,7 +54,22 @@ const ApiCard: React.FC<ApiCardProps> = ({ api, isSubscribed, onSubscribe, onSho
               <Tag color="blue">{api.method}</Tag>
               <Tag color="purple">{api.pricePerRequest} credits/request</Tag>
             </Space>
-            <Text type="secondary">Endpoint: {api.endpoint}</Text>
+            {apiUrl && (
+              <div style={{ marginTop: '8px' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>API URL:</Text>
+                <Input.TextArea
+                  value={apiUrl}
+                  autoSize
+                  readOnly
+                  style={{ marginTop: '4px' }}
+                  onClick={(e) => {
+                    e.currentTarget.select();
+                    navigator.clipboard.writeText(apiUrl);
+                    message.success('URL copied to clipboard!');
+                  }}
+                />
+              </div>
+            )}
           </Space>
         }
       />

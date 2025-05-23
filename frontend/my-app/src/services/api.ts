@@ -83,11 +83,43 @@ export const api = createApi({
       invalidatesTags: ["Api", "User"],
     }),
 
-    testApiEndpoint: builder.mutation<ApiResponse<any>, { apiId: string; endpoint: string }>({
-      query: ({ apiId, endpoint }) => ({
-        url: `/apis/demo/${apiId}`,
-        method: "POST",
-        body: { endpoint }
+    testApiEndpoint: builder.mutation<ApiResponse<any>, { apiId: string; endpoint: string; method: string }>({
+      query: ({ endpoint, method }) => ({
+        url: endpoint,
+        method: method,
+      }),
+      invalidatesTags: ["Api", "User"],
+    }),
+
+    // Demo API endpoints
+    getDemoUsers: builder.mutation<ApiResponse<any>, string>({
+      query: (apiKey) => ({
+        url: `/apis/demo/users?apiKey=${apiKey}`,
+        method: "GET",
+      }),
+      invalidatesTags: ["Api", "User"],
+    }),
+
+    getDemoProducts: builder.mutation<ApiResponse<any>, string>({
+      query: (apiKey) => ({
+        url: `/apis/demo/products?apiKey=${apiKey}`,
+        method: "GET",
+      }),
+      invalidatesTags: ["Api", "User"],
+    }),
+
+    getDemoWeather: builder.mutation<ApiResponse<any>, string>({
+      query: (apiKey) => ({
+        url: `/apis/demo/weather?apiKey=${apiKey}`,
+        method: "GET",
+      }),
+      invalidatesTags: ["Api", "User"],
+    }),
+
+    getDemoNews: builder.mutation<ApiResponse<any>, string>({
+      query: (apiKey) => ({
+        url: `/apis/demo/news?apiKey=${apiKey}`,
+        method: "GET",
       }),
       invalidatesTags: ["Api", "User"],
     }),
@@ -104,5 +136,10 @@ export const {
   useGetAllApisQuery,
   useGetApiByIdQuery,
   useSubscribeToApiMutation,
-  useTestApiEndpointMutation
+  useTestApiEndpointMutation,
+  // Export demo API hooks
+  useGetDemoUsersMutation,
+  useGetDemoProductsMutation,
+  useGetDemoWeatherMutation,
+  useGetDemoNewsMutation,
 } = api;

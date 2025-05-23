@@ -1,6 +1,6 @@
 import React from 'react';
-import { Modal, Button, Descriptions, Tag, Space, Input, Typography, Alert, Spin } from 'antd';
-import { ApiOutlined } from '@ant-design/icons';
+import { Modal, Button, Descriptions, Tag, Space, Input, Typography, Alert, Spin, message, Card } from 'antd';
+import { ApiOutlined, CopyOutlined } from '@ant-design/icons';
 import { Api } from '../types';
 
 const { Title, Text } = Typography;
@@ -19,6 +19,7 @@ interface ApiDetailsModalProps {
   isTesting: boolean;
   testResult: any;
   userCredit: number;
+  subscription?: { api: string; apiKey: string };
 }
 
 const ApiDetailsModal: React.FC<ApiDetailsModalProps> = ({
@@ -34,8 +35,18 @@ const ApiDetailsModal: React.FC<ApiDetailsModalProps> = ({
   onTest,
   isTesting,
   testResult,
-  userCredit
+  userCredit,
+  subscription
 }) => {
+  const apiUrl = subscription && apiData ? `${apiData.endpoint}?apiKey=${subscription.apiKey}` : null;
+
+  const handleCopyUrl = () => {
+    if (apiUrl) {
+      navigator.clipboard.writeText(apiUrl);
+      message.success('API URL copied to clipboard!');
+    }
+  };
+
   return (
     <Modal
       title="API Details"
@@ -60,63 +71,83 @@ const ApiDetailsModal: React.FC<ApiDetailsModalProps> = ({
         <div style={{ textAlign: 'center', padding: '20px' }}>
           <Spin size="large" />
         </div>
-      ) : apiData ? (
-        <div>
+      ) : (
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Descriptions bordered column={1}>
-            <Descriptions.Item label="Name">{apiData.name}</Descriptions.Item>
-            <Descriptions.Item label="Description">{apiData.description}</Descriptions.Item>
-            <Descriptions.Item label="Method">{apiData.method}</Descriptions.Item>
-            <Descriptions.Item label="Endpoint">{apiData.endpoint}</Descriptions.Item>
-            <Descriptions.Item label="Price per Request">{apiData.pricePerRequest} credits</Descriptions.Item>
-            <Descriptions.Item label="Total Calls">{apiData.callCount}</Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <Tag color={apiData.isActive ? "success" : "error"}>
-                {apiData.isActive ? "Active" : "Inactive"}
+            <Descriptions.Item label="Name">{apiData?.name}</Descriptions.Item>
+            <Descriptions.Item label="Description">{apiData?.description}</Descriptions.Item>
+            <Descriptions.Item label="Method">
+              <Tag color="blue">{apiData?.method}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Price per Request">
+              <Tag color="purple">{apiData?.pricePerRequest} credits</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Your Credit">
+              <Tag color={userCredit >= (apiData?.pricePerRequest || 0) ? "success" : "error"}>
+                {userCredit} credits
               </Tag>
             </Descriptions.Item>
           </Descriptions>
 
+          {apiUrl && (
+            <Card title="API URL" extra={
+              <Button 
+                type="primary" 
+                icon={<CopyOutlined />} 
+                onClick={handleCopyUrl}
+              >
+                Copy URL
+              </Button>
+            }>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Input.TextArea
+                  value={apiUrl}
+                  autoSize
+                  readOnly
+                  onClick={(e) => {
+                    e.currentTarget.select();
+                    handleCopyUrl();
+                  }}
+                />
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  Share this URL with anyone to access the API. Credits will be deducted from your account when the API is used.
+                </Text>
+              </Space>
+            </Card>
+          )}
+
           {isSubscribed && (
-            <div style={{ marginTop: '20px' }}>
-              <Title level={5}>Test API</Title>
+            <Card title="Test API">
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Input
-                  placeholder="Enter endpoint to test"
                   value={testEndpoint}
                   onChange={(e) => onTestEndpointChange(e.target.value)}
-                  disabled={isTesting}
+                  placeholder="Enter endpoint to test"
                 />
-                <Text type="secondary" style={{ marginBottom: '8px' }}>
-                  Required credits: {apiData.pricePerRequest} (Your balance: {userCredit})
-                </Text>
                 <Button
                   type="primary"
                   onClick={onTest}
-                  icon={<ApiOutlined />}
                   loading={isTesting}
-                  block
+                  icon={<ApiOutlined />}
                 >
-                  {isTesting ? 'Testing...' : 'Test Endpoint'}
+                  Test Endpoint
                 </Button>
                 {testResult && (
                   <Alert
-                    style={{ marginTop: '8px' }}
-                    message={testResult.error ? "Error" : "Test Result"}
+                    message={testResult.error ? "Error" : "Success"}
                     description={
-                      testResult.error 
-                        ? `${testResult.message}${testResult.data ? `\n${JSON.stringify(testResult.data, null, 2)}` : ''}`
-                        : JSON.stringify(testResult, null, 2)
+                      <pre style={{ maxHeight: '200px', overflow: 'auto' }}>
+                        {JSON.stringify(testResult, null, 2)}
+                      </pre>
                     }
-                    type={testResult.error ? "error" : "info"}
+                    type={testResult.error ? "error" : "success"}
                     showIcon
                   />
                 )}
               </Space>
-            </div>
+            </Card>
           )}
-        </div>
-      ) : (
-        <Text>No API details available</Text>
+        </Space>
       )}
     </Modal>
   );
