@@ -1,4 +1,4 @@
-import mongoose, { model, Schema } from "mongoose";
+import mongoose from "mongoose";
 import { type IUser } from "./user.dto";
 import bcrypt from "bcrypt";
 
@@ -7,7 +7,7 @@ const hashPassword = async (password: string) => {
     return hash;
   };
 
-const userSchema = new Schema<IUser>({
+const userSchema = new mongoose.Schema<IUser>({
     name: {
         type: String,
         required: true,
@@ -26,29 +26,38 @@ const userSchema = new Schema<IUser>({
         enum: ["USER", "ADMIN"],
         default: "USER",
       },
-      subscribedApis: [
-        {
-          api: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Api",
-            required: true,
-          },
-          apiKey: {
-            type: String,
-            required: true,
-            unique: true,
-          },
+      credit: {
+        type: Number,
+        default: 100,
+      },
+      apiKey: {
+        type: String,
+        unique: true,
+        sparse: true  // This allows null values without causing unique constraint violations
+      },
+      refreshToken: {
+        type: String,
+      },
+      subscribedApis: [{
+        api: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Api",
         },
-      ],
-        credit: {
-            type: Number,
-            default: 10,
-        },
-        refreshToken: {
-            type: String,
+        hit: {
+          type: Number,
+          default: 0
         }
+      }],
+      active: {
+        type: Boolean,
+        default: true,
+      },
+}, {
+  timestamps: true,
 });
- 
+
+// Drop any existing indexes on subscribedApis.apiKey
+
 
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
@@ -57,5 +66,5 @@ userSchema.pre("save", async function (next) {
     next();
   });
   
-  export default model<IUser>("User", userSchema);
+export default mongoose.model<IUser>("User", userSchema);
   

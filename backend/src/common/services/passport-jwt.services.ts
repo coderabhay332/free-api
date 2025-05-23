@@ -26,7 +26,7 @@ export const initPassport = (): void => {
           if (!token) {
             return done(createError(401, "Token missing"));
           }
-           // Check token structure
+          // Check token structure
           done(null, token); // Pass the token to req.user
         } catch (error) {
           done(error);

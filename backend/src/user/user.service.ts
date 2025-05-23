@@ -4,6 +4,9 @@ import { type IUser } from "./user.dto";
 import userSchema from "./user.schema";
 require('dotenv').config();
 import jwt from "jsonwebtoken";
+import bcrypt from 'bcrypt';
+import { Types } from "mongoose";
+import { generateApiKey } from "../common/helper/apiKey-generator";
 
 
 export const createUser = async (data: IUser) => {
@@ -34,33 +37,58 @@ export const generateRefreshToken = (id: string, role: string): string => {
 
 
   export const subscribeApi = async (userId: string, apiId: string) => {
-    const [user, api] = await Promise.all([
-      userSchema.findById(userId),
-      apiSchema.findById(apiId),
-    ]);
-  
+    const user = await userSchema.findById(userId);
     if (!user) throw new Error("User not found");
+
+    const api = await apiSchema.findById(apiId);
     if (!api) throw new Error("API not found");
-  
+
+    // Check if already subscribed
+    const isSubscribed = user.subscribedApis.some(sub => sub.api.toString() === apiId);
+    if (isSubscribed) {
+        throw new Error("User already subscribed to this API");
+    }
+
+    // Check credit
     if (user.credit < api.pricePerRequest) {
-      throw new Error("Insufficient credit to subscribe this API");
+        throw new Error("Insufficient credit");
     }
-  
-    const apiObjectId = new mongoose.Types.ObjectId(apiId);
-    const userObjectId = new mongoose.Types.ObjectId(userId);
-  
-    if (!user.subscribedApis.some(id => id.equals(apiObjectId))) {
-      user.subscribedApis.push(apiObjectId);
+
+    // Generate API key if user doesn't have one
+    if (!user.apiKey) {
+        user.apiKey = generateApiKey();
     }
-  
-    if (!api.subscribedUsers.some(id => id.equals(userObjectId))) {
-      api.subscribedUsers.push(userObjectId);
+
+    // Add subscription
+    user.subscribedApis.push({
+        api: new Types.ObjectId(apiId),
+        hit: 0
+    });
+
+    // Add user to API's subscribed users
+    if (!api.subscribedUsers.includes(new Types.ObjectId(userId))) {
+        api.subscribedUsers.push(new Types.ObjectId(userId));
     }
-  
+
     await Promise.all([user.save(), api.save()]);
-  };
+    return { url: `${api.endpoint}?apiKey=${user.apiKey}` };
+};
 
   export const getMe = async (userId: string) => {
     const user = await userSchema.findById(userId).select('-password').lean();
     return user;
   };
+
+export const login = async (email: string, password: string) => {
+  const user = await userSchema.findOne({ email });
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    throw new Error('Invalid password');
+  }
+
+  return user;
+};

@@ -33,7 +33,7 @@ export const roleAuth = (roles: IUser["role"][], publicRoutes: string[] = []) =>
       try {
         const decodedUser = jwt.verify(
           token,
-          process.env.JWT_SECRET!
+          process.env.JWT_ACCESS_SECRET || "default_secret"
         ) as JwtPayload;
         req.user = decodedUser as IUser;
       } catch (err) {

@@ -41,19 +41,6 @@ export const checkSubscription = asyncHandler(async (req: Request, res: Response
   next();
 });
 
-export const responseApi = asyncHandler(async (req: Request, res: Response) => {
-  const apiId = req.params.id;
-  const userId = (req.user as any)?.id;
-  const header = req.headers.authorization;
-  if (!header) {
-    res.status(400).send(createResponse(null, "Authorization header is required"));
-    return;
-  }
-  console.log("header", header)
-  const result = await apiService.responseApi(userId, apiId, header);
-  res.send(createResponse(result, "API fetched successfully"));
-}
-);
 
 export const demoApi = asyncHandler(async (req: Request, res: Response) => {
   const apiId = req.params.id;
@@ -74,7 +61,51 @@ export const analyzeApi = asyncHandler(async (req: Request, res: Response) => {
 export const subscribeApi = asyncHandler(async (req: Request, res: Response) => {
   const apiId = req.params.id;
   const userId = (req.user as any)?.id;
+  if (!userId) {
+    res.status(401).send(createResponse(null, "User not authenticated"));
+    return;
+  }
   const result = await apiService.subscribeApi(userId, apiId);
   res.send(createResponse(result, "API subscribed successfully"));
-}
-);
+});
+
+// Demo controllers
+export const getDemoUsers = asyncHandler(async (req: Request, res: Response) => {
+  const apiKey = req.query.apiKey as string;
+  if (!apiKey) {
+    res.status(400).send(createResponse(null, "API key is required"));
+    return;
+  }
+  const result = await apiService.getDemoUsers(apiKey);
+  res.send(createResponse(result, "Demo users fetched successfully"));
+});
+
+export const getDemoProducts = asyncHandler(async (req: Request, res: Response) => {
+  const apiKey = req.query.apiKey as string;
+  if (!apiKey) {
+    res.status(400).send(createResponse(null, "API key is required"));
+    return;
+  }
+  const result = await apiService.getDemoProducts(apiKey);
+  res.send(createResponse(result, "Demo products fetched successfully"));
+});
+
+export const getDemoWeather = asyncHandler(async (req: Request, res: Response) => {
+  const apiKey = req.query.apiKey as string;
+  if (!apiKey) {
+    res.status(400).send(createResponse(null, "API key is required"));
+    return;
+  }
+  const result = await apiService.getDemoWeather(apiKey);
+  res.send(createResponse(result, "Demo weather fetched successfully"));
+});
+
+export const getDemoNews = asyncHandler(async (req: Request, res: Response) => {
+  const apiKey = req.query.apiKey as string;
+  if (!apiKey) {
+    res.status(400).send(createResponse(null, "API key is required"));
+    return;
+  }
+  const result = await apiService.getDemoNews(apiKey);
+  res.send(createResponse(result, "Demo news fetched successfully"));
+});
