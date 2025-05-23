@@ -28,8 +28,16 @@ const userSchema = new Schema<IUser>({
       },
       subscribedApis: [
         {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Api",
+          api: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Api",
+            required: true,
+          },
+          apiKey: {
+            type: String,
+            required: true,
+            unique: true,
+          },
         },
       ],
         credit: {

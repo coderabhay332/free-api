@@ -5,7 +5,10 @@ export interface IUser extends BaseSchema {
   email: string;
   password: string;
   role: string;
-  subscribedApis: Types.ObjectId[];
+  subscribedApis: {
+    api: Types.ObjectId;
+    apiKey: string;
+  }[];
   credit: number;
   refreshToken?: string;
 
