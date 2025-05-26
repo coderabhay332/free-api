@@ -1,5 +1,7 @@
 import userRoutes from './userRoutes.json';
 import apiRoutes from './apiRoutes.json';
+import appRoutes from './appRoutes.json';
+import serviceRoutes from './serviceRoutes.json';
 
 const swagger = {
     openapi: '3.0.0',
@@ -20,6 +22,11 @@ const swagger = {
                 type: 'http',
                 scheme: 'bearer',
                 bearerFormat: 'JWT'
+            },
+            apiKeyAuth: {
+                type: 'apiKey',
+                in: 'header',
+                name: 'x-api-key'
             }
         }
     },
@@ -28,7 +35,9 @@ const swagger = {
     }],
     paths: {
         ...userRoutes,
-        ...apiRoutes
+        ...apiRoutes,
+        ...appRoutes,
+        ...serviceRoutes
     }
 }
 export default swagger;

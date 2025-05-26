@@ -1,0 +1,20 @@
+import { Router } from "express";
+import { catchError } from "../common/middleware/catch-error";
+import * as userController from "./user.controller";
+import * as userValidator from "./user.validation";
+import { roleAuth } from "../common/middleware/role-auth.middleware";
+import passport from "passport";
+
+const router = Router();
+
+router
+  .get("/", userController.getAllUser)
+  .post("/login", userValidator.login, catchError,passport.authenticate('login', { session: false }), userController.login)
+  .post("/register", userValidator.createUser, catchError, userController.createUser)
+  .get("/:id", userController.getUserById)
+  .post("/subscribe/:id",catchError,roleAuth(["ADMIN", "USER"]), userController.subscribeApi)
+  .post("/block/:id",catchError,roleAuth(["ADMIN", "USER"]), userController.blockApi)
+  .post("/unblock/:id",catchError,roleAuth(["ADMIN", "USER"]), userController.unblockApi)
+
+
+export default router;

@@ -4,13 +4,13 @@ import express, { type Express, type Request, type Response } from "express";
 import helmet from "helmet";
 import http from "http";
 import morgan from "morgan";
-import errorHandler from "./src/common/middleware/error.handler";
-import { initDB } from "./src/common/services/database.services";
-import { initPassport } from "./src/common/services/passport-jwt.services";
-import routes from "./src/routes";
-import { type IUser } from "./src/user/user.dto";
+import errorHandler from "./app/common/middleware/error.handler";
+import { initDB } from "./app/common/services/database.services";
+import { initPassport } from "./app/common/services/passport-jwt.services";
+import routes from "./app/routes";
+import { type IUser } from "./app/user/user.dto";
 import swaggerUi from "swagger-ui-express";
-import swaggerDocument from "./src/swagger/swagger";
+import swaggerDocument from "./app/swagger/swagger";
 
 
 declare global {

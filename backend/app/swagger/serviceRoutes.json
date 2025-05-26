@@ -1,0 +1,147 @@
+{
+  "/services/all": {
+    "get": {
+      "summary": "Get all services",
+      "operationId": "getAllServices",
+      "tags": ["Services"],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "List of services retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": { "type": "string" },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "_id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "description": { "type": "string" },
+                        "pricePerCall": { "type": "number" },
+                        "endpoint": { "type": "string" },
+                        "active": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/services/{id}": {
+    "get": {
+      "summary": "Get service by ID",
+      "operationId": "getServiceById",
+      "tags": ["Services"],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Service ID"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Service details retrieved successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": { "type": "string" },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "_id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "description": { "type": "string" },
+                      "pricePerCall": { "type": "number" },
+                      "endpoint": { "type": "string" },
+                      "active": { "type": "boolean" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/services": {
+    "post": {
+      "summary": "Create a new service",
+      "operationId": "createService",
+      "tags": ["Services"],
+      "security": [
+        {
+          "bearerAuth": []
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "example": "Weather API" },
+                "description": { "type": "string", "example": "Get weather information" },
+                "pricePerCall": { "type": "number", "minimum": 0, "example": 1 },
+                "endpoint": { "type": "string", "example": "/api/services/demo/weather" }
+              },
+              "required": ["name", "pricePerCall", "endpoint"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Service created successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": { "type": "string" },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "_id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "description": { "type": "string" },
+                      "pricePerCall": { "type": "number" },
+                      "endpoint": { "type": "string" },
+                      "active": { "type": "boolean" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
