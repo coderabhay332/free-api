@@ -5,6 +5,7 @@ import ServiceSchema from "../../service/service.schema";
 import AppSchema from "../../app/app.schema";
 
 export const validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
+  const startTime = Date.now();
   try {
     const apiKey = req.query.key as string;
     console.log('API Key:', apiKey);
@@ -136,10 +137,22 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
     req.service = service;
     req.apiKey = apiKeyDoc;
 
+    const currentHit = service.hitStats.find(stat => stat.user.toString() === user._id.toString());
+    if (currentHit) {
+      currentHit.hitCount++;
+    } else {
+      service.hitStats.push({ user: user._id, hitCount: 1 });
+    }
+    await service.save();
+   
+  
     next();
   } catch (error: any) {
     console.error('API Key Middleware Error:', error);
     console.error('Error Stack:', error.stack);
+    
+
+
     res.status(500).json({
       success: false,
       error_code: 500,

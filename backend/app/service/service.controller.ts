@@ -82,3 +82,14 @@ export const getNews = asyncHandler(async (req: Request, res: Response) => {
   );
   res.send(createResponse(result));
 });
+
+export const getUserServiceAnalytics = asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req.user as any)?.id;
+  const result = await serviceService.getUserAnalytics(userId);
+  res.send(createResponse(result));
+});
+
+export const getAdminServiceAnalytics = asyncHandler(async (req: Request, res: Response) => {
+  const result = await serviceService.getAdminAnalytics();
+  res.send(createResponse(result));
+});

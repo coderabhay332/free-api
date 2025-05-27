@@ -8,7 +8,8 @@ import RegisterForm from './pages/Register';
 
 import AppPage from './pages/AppPage';
 import AuthLayout from './layouts/auth';
-
+import AdminAnalytics from './components/AdminAnalytics';
+import UserAnalytics from './components/UserAnalytics';
 function App() {
   const navigate = useNavigate();
 
@@ -20,6 +21,16 @@ function App() {
       <Route path="/user/apps" element={
         <AuthLayout>
           <AppPage />
+        </AuthLayout>
+      } />
+      <Route path="/admin/analytics" element={
+         <AuthLayout>
+          <AdminAnalytics />
+        </AuthLayout>
+      } />
+      <Route path="/user/analytics" element={
+        <AuthLayout>
+          <UserAnalytics />
         </AuthLayout>
       } />
     </Routes>

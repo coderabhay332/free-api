@@ -1,139 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { useGetAllAppsQuery, useGetAllServicesQuery, useSubscribeServiceMutation, useBlockServiceMutation, useUnblockServiceMutation, useGetAppByIdQuery } from '../services/api';
-import { Card, Button, Typography, Space, Alert, Spin, Input, message, Row, Col, Tag, Modal, Descriptions, List } from 'antd';
-import { PlusOutlined, ApiOutlined, CheckCircleOutlined, StopOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { useGetAllAppsQuery, useGetAllServicesQuery, useSubscribeServiceMutation, useBlockServiceMutation, useUnblockServiceMutation, useMeQuery, useAddFundsMutation } from '../services/api';
+import { Typography, Button, Spin, message, Modal, Input } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import CreateAppModal from '../components/CreateAppModal';
+import AppCard from '../components/AppCard';
+import EmptyAppsState from '../components/EmptyAppsState';
+import AppDetailsModal from '../components/AppDetailsModal';
+import Wallet from '../components/Wallet';
 
-
-const { Title, Text } = Typography;
-
-interface AppDetailsModalProps {
-  visible: boolean;
-  onClose: () => void;
-  app: any;
-  services: any[];
-  onSubscribe: (serviceId: string) => void;
-  onBlock: (serviceId: string) => void;
-  onUnblock: (serviceId: string) => void;
-  loadingActions: { [key: string]: boolean };
-}
-
-const AppDetailsModal: React.FC<AppDetailsModalProps> = ({
-  visible,
-  onClose,
-  app,
-  services,
-  onSubscribe,
-  onBlock,
-  onUnblock,
-  loadingActions,
-}) => {
-  return (
-    <Modal
-      title={`App Details: ${app?.name}`}
-      open={visible}
-      onCancel={onClose}
-      width={800}
-      footer={null}
-    >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Descriptions title="App Information" bordered>
-          <Descriptions.Item label="Name">{app?.name}</Descriptions.Item>
-          <Descriptions.Item label="API Key">
-            {app?.apiKey?.key || 'No API key available'}
-          </Descriptions.Item>
-          <Descriptions.Item label="Created At">{new Date(app?.createdAt).toLocaleDateString()}</Descriptions.Item>
-        </Descriptions>
-
-        <Title level={4}>Available Services</Title>
-        <List
-          dataSource={services}
-          renderItem={(service) => {
-            const isSubscribed = app?.subscribedApis?.includes(service._id);
-            const isBlocked = app?.blockedApis?.includes(service._id);
-            const endpoint = isSubscribed && app?.apiKey?.key ? `${service.endpoint}?key=${app.apiKey.key}` : null;
-
-            return (
-              <List.Item
-                actions={[
-                  !isSubscribed ? (
-                    <Button 
-                      type="primary" 
-                      onClick={() => onSubscribe(service._id)}
-                      loading={loadingActions[service._id]}
-                    >
-                      Subscribe
-                    </Button>
-                  ) : isBlocked ? (
-                    <Button 
-                      icon={<PlayCircleOutlined />} 
-                      onClick={() => onUnblock(service._id)}
-                      loading={loadingActions[service._id]}
-                    >
-                      Unblock
-                    </Button>
-                  ) : (
-                    <Button 
-                      danger 
-                      icon={<StopOutlined />} 
-                      onClick={() => onBlock(service._id)}
-                      loading={loadingActions[service._id]}
-                    >
-                      Block
-                    </Button>
-                  ),
-                ]}
-              >
-                <List.Item.Meta
-                  title={service.name}
-                  description={
-                    <Space direction="vertical">
-                      <Text>{service.description}</Text>
-                      {endpoint && (
-                        <Space>
-                          <Text strong>Endpoint:</Text>
-                          <Input
-                            value={endpoint}
-                            readOnly
-                            style={{ width: '400px' }}
-                            suffix={
-                              <Button
-                                type="text"
-                                icon={<ApiOutlined />}
-                                onClick={() => {
-                                  navigator.clipboard.writeText(endpoint);
-                                  message.success('Endpoint copied to clipboard');
-                                }}
-                              />
-                            }
-                          />
-                        </Space>
-                      )}
-                    </Space>
-                  }
-                />
-              </List.Item>
-            );
-          }}
-        />
-      </Space>
-    </Modal>
-  );
-};
+const { Title } = Typography;
 
 const AppPage: React.FC = () => {
   const { data: appsData, isLoading: isLoadingApps, refetch: refetchApps } = useGetAllAppsQuery();
   const { data: servicesData, isLoading: isLoadingServices } = useGetAllServicesQuery();
+  const { data: userData, isLoading: isLoadingUser, refetch: refetchUser } = useMeQuery();
   const [selectedApp, setSelectedApp] = useState<any>(null);
-  const { data: appDetails } = useGetAppByIdQuery(selectedApp?._id || '', { skip: !selectedApp?._id });
   const [subscribeService] = useSubscribeServiceMutation();
   const [blockService] = useBlockServiceMutation();
   const [unblockService] = useUnblockServiceMutation();
+  const [addFunds] = useAddFundsMutation();
   
-
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({});
+  const [isAddFundsModalVisible, setIsAddFundsModalVisible] = useState(false);
+  const [amount, setAmount] = useState<string>('');
 
   const handleAppSelect = (app: any) => {
     setSelectedApp(app);
@@ -185,76 +76,148 @@ const AppPage: React.FC = () => {
     }
   };
 
-  if (isLoadingApps || isLoadingServices) {
+  const handleAddFunds = () => {
+    setIsAddFundsModalVisible(true);
+  };
+
+  const handleAddFundsSubmit = async () => {
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      message.error('Please enter a valid amount');
+      return;
+    }
+    try {
+      await addFunds({ amount: numAmount }).unwrap();
+      await refetchUser();
+      message.success(`Successfully added $${numAmount.toFixed(2)} to your wallet`);
+      setIsAddFundsModalVisible(false);
+      setAmount('');
+    } catch (error: any) {
+      message.error(error.data?.message || 'Failed to add funds');
+    }
+  };
+
+  if (isLoadingApps || isLoadingServices || isLoadingUser) {
     return (
-      <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        padding: '60px'
+      }}>
         <Spin size="large" />
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-          <Title level={2}>My Apps</Title>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setIsCreateModalVisible(true)}
-          >
-            Create New App
-          </Button>
-        </Space>
-
-        <Row gutter={[16, 16]}>
-          {appsData?.data?.map((app) => (
-            <Col xs={24} sm={12} md={8} lg={6} key={app._id}>
-              <Card
-                hoverable
-                onClick={() => handleAppSelect(app)}
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Title level={4}>{app.name}</Title>
-                  <Text type="secondary">Created: {new Date(app.createdAt).toLocaleDateString()}</Text>
-                  <Space>
-                    <Tag color="blue">{app.subscribedApis?.length || 0} Services</Tag>
-                    <Tag color="red">{app.blockedApis?.length || 0} Blocked</Tag>
-                  </Space>
-                </Space>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-
-        {(!appsData?.data || appsData.data.length === 0) && (
-          <Card>
-            <Text>No apps created yet. Create your first app to get started!</Text>
-          </Card>
-        )}
-
-        <CreateAppModal
-          visible={isCreateModalVisible}
-          onClose={() => setIsCreateModalVisible(false)}
-          onSuccess={refetchApps}
-        />
-
-        <AppDetailsModal
-          visible={isModalVisible}
-          onClose={() => {
-            setIsModalVisible(false);
-            setSelectedApp(null);
+    <div style={{
+      padding: '32px',
+      maxWidth: '1000px',
+      margin: '0 auto',
+      backgroundColor: '#fafafa',
+      minHeight: '100vh'
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '32px'
+      }}>
+        <Title 
+          level={2} 
+          style={{
+            margin: 0,
+            color: '#262626',
+            fontWeight: '600'
           }}
-          app={selectedApp}
-          services={servicesData?.data || []}
-          onSubscribe={handleSubscribe}
-          onBlock={handleBlock}
-          onUnblock={handleUnblock}
-          loadingActions={loadingActions}
+        >
+          My Applications
+        </Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setIsCreateModalVisible(true)}
+          style={{
+            borderRadius: '6px',
+            fontWeight: '500'
+          }}
+        >
+          Create New App
+        </Button>
+      </div>
+
+      {/* Wallet */}
+      <Wallet 
+        balance={userData?.data?.wallet?.balance || 0}
+        freeCredits={userData?.data?.wallet?.freeCredits || 0}
+        onAddFunds={handleAddFunds}
+      />
+
+      {/* Apps Grid */}
+      {appsData?.data && appsData.data.length > 0 ? (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '16px'
+        }}>
+          {appsData.data.map((app: any) => (
+            <AppCard
+              key={app._id}
+              app={app}
+              onClick={() => handleAppSelect(app)}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyAppsState onCreateClick={() => setIsCreateModalVisible(true)} />
+      )}
+
+      {/* Modals */}
+      <CreateAppModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onSuccess={refetchApps}
+      />
+
+      <AppDetailsModal
+        visible={isModalVisible}
+        onClose={() => {
+          setIsModalVisible(false);
+          setSelectedApp(null);
+        }}
+        app={selectedApp}
+        services={servicesData?.data || []}
+        onSubscribe={handleSubscribe}
+        onBlock={handleBlock}
+        onUnblock={handleUnblock}
+        loadingActions={loadingActions}
+      />
+
+      {/* Add Funds Modal */}
+      <Modal
+        title="Add Funds to Wallet"
+        open={isAddFundsModalVisible}
+        onOk={handleAddFundsSubmit}
+        onCancel={() => {
+          setIsAddFundsModalVisible(false);
+          setAmount('');
+        }}
+        okText="Add Funds"
+        cancelText="Cancel"
+      >
+        <Input
+          type="number"
+          placeholder="Enter amount"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          prefix="$"
+          style={{ marginTop: '16px' }}
         />
-      </Space>
+      </Modal>
     </div>
   );
 };
 
-export default AppPage; 
+export default AppPage;

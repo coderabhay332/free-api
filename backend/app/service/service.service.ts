@@ -1,6 +1,7 @@
 import { type IService } from "./service.dto";
 import ServiceSchema from "./service.schema";
 import UserSchema from "../user/user.schema";
+import AppSchema from "../app/app.schema";
 
 export const createService = async (data: IService) => {
   const result = await ServiceSchema.create({ ...data, active: true });
@@ -207,4 +208,84 @@ export const getNews = async (userId: string, serviceId: string) => {
       publishedAt: "2024-03-20T09:00:00Z"
     }
   ];
+};
+
+export const getUserAnalytics = async (userId: string) => {
+  const user = await UserSchema.findById(userId);
+  const apps = await AppSchema.find({ user: userId });
+  
+  // Get all services that user has subscribed to
+  const subscribedServices = await ServiceSchema.find({
+    _id: { $in: apps.flatMap(app => app.subscribedApis || []) }
+  });
+
+  // Calculate total hits and spent amount from hitStats
+  const totalHits = subscribedServices.reduce((acc, service) => {
+    const userHitStat = service.hitStats.find(stat => stat.user.toString() === userId);
+    return acc + (userHitStat?.hitCount || 0);
+  }, 0);
+
+  const totalSpent = subscribedServices.reduce((acc, service) => {
+    const userHitStat = service.hitStats.find(stat => stat.user.toString() === userId);
+    return acc + ((userHitStat?.hitCount || 0) * service.pricePerCall);
+  }, 0);
+
+  // Calculate average response time
+ 
+
+
+  return {
+    totalHits,
+    totalSpent,
+    subscribedServicesCount: subscribedServices.length,
+    successCount: totalHits, // Since we only record successful hits
+    failureCount: 0, // We don't track failures in hitStats
+    
+  };
+};
+
+export const getAdminAnalytics = async () => {
+  const users = await UserSchema.find();
+  const apps = await AppSchema.find();
+  const services = await ServiceSchema.find();
+
+  const totalHits = services.reduce((acc, service) => 
+    acc + service.hitStats.reduce((hitAcc, stat) => hitAcc + stat.hitCount, 0), 0);
+
+  const totalRevenue = services.reduce((acc, service) => {
+    const serviceHits = service.hitStats.reduce((hitAcc, stat) => hitAcc + stat.hitCount, 0);
+    return acc + (serviceHits * service.pricePerCall);
+  }, 0);
+
+  // Calculate average response time
+
+
+
+  // Get top 5 services by hits
+  const topServices = services
+    .map(service => {
+      const hitCount = service.hitStats.reduce((acc, stat) => acc + stat.hitCount, 0);
+      return {
+        _id: service._id,
+        hitCount,
+        revenue: hitCount * service.pricePerCall,
+        service: {
+          name: service.name,
+          description: service.description
+        }
+      };
+    })
+    .sort((a, b) => b.hitCount - a.hitCount)
+    .slice(0, 5);
+
+  return {
+    totalUsers: users.length,
+    totalApps: apps.length,
+    totalServices: services.length,
+    totalHits,
+    totalRevenue,
+    successCount: totalHits, // Since we only record successful hits
+    failureCount: 0, // We don't track failures in hitStats
+    topServices
+  };
 };

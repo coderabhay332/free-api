@@ -6,7 +6,7 @@ import { baseQueryWithReauth } from "./baseQuery";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["User", "Service", "App"],
+  tagTypes: ["User", "Service", "App", "Analytics"],
   endpoints: (builder) => ({
     // User endpoints
     me: builder.query<ApiResponse<User>, void>({
@@ -62,6 +62,11 @@ export const api = createApi({
     // App endpoints
     getAllApps: builder.query<AppListResponse, void>({
       query: () => `/apps`,
+      providesTags: ["App"],
+    }),
+    getAppByUserId: builder.query<AppListResponse, void>({
+      query: () => `/users/getApp`,
+      
       providesTags: ["App"],
     }),
 
@@ -142,6 +147,25 @@ export const api = createApi({
         method: "GET",
       }),
     }),
+
+    // Analytics endpoints
+    getUserAnalytics: builder.query<ApiResponse<any>, void>({
+      query: () => `/services/analytics/user`,
+      providesTags: ["Analytics"],
+    }),
+
+    getAdminAnalytics: builder.query<ApiResponse<any>, void>({
+      query: () => `/services/analytics/admin`,
+      providesTags: ["Analytics"],
+    }),
+
+    addFunds: builder.mutation<ApiResponse<User>, { amount: number }>({
+      query: (body) => ({
+        url: `/users/add-funds`,
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -154,6 +178,7 @@ export const {
   useGetServiceByIdQuery,
   useCreateServiceMutation,
   useGetAllAppsQuery,
+  useGetAppByUserIdQuery,
   useGetAppByIdQuery,
   useCreateAppMutation,
   useSubscribeServiceMutation,
@@ -164,4 +189,7 @@ export const {
   useGetJokeMutation,
   useGetQuoteMutation,
   useGetNewsMutation,
+  useGetUserAnalyticsQuery,
+  useGetAdminAnalyticsQuery,
+  useAddFundsMutation,
 } = api;

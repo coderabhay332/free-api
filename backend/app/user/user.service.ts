@@ -209,3 +209,26 @@ export const unblockApi = async (userId: string, serviceId: string, appId: strin
 
   return updatedApp;
 };
+
+export const refreshToken = async (refreshToken: string) => {
+  const result = await UserSchema.findOne({ refreshToken });
+  if (!result) {
+    throw new Error("User not found");
+  }
+  return result;
+};
+
+export const getAppByUserId = async (userId: string) => {
+  const result = await AppSchema.find({ user: userId }).lean();
+  return result;
+};
+
+export const addFunds = async (userId: string, amount: number) => {
+  const user = await UserSchema.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  user.wallet.balance += amount;
+  await user.save();
+  return user;
+};

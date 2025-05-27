@@ -95,3 +95,17 @@ export const unblockApi = asyncHandler(async (req: Request, res: Response) => {
   const result = await userService.unblockApi(userId, req.params.id, req.body.appId);
   res.send(createResponse(result, "Api unblocked sucssefully"));
 });
+export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
+  const result = await userService.refreshToken(req.body.refreshToken);
+  res.send(createResponse(result, "Token refreshed sucssefully"));
+});
+export const getAppByUserId = asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req.user as any)?.id;
+  const result = await userService.getAppByUserId(userId);
+  res.send(createResponse(result));
+});
+export const addFunds = asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req.user as any)?.id;
+  const result = await userService.addFunds(userId, req.body.amount);
+  res.send(createResponse(result, "Funds added sucssefully"));
+});

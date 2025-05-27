@@ -7,8 +7,10 @@ import { roleAuth } from "../common/middleware/role-auth.middleware";
 const router = Router();
 
 router
-  .get("/", appController.getAllApp)
+  .get("/", roleAuth(["ADMIN", "USER"]), appController.getAllApp)
+  
   .post("/create-app", catchError,roleAuth(["ADMIN", "USER"]), appController.createApp)
+  
   .get("/:id", appController.getAppById);
 
 
