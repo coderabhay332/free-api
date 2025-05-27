@@ -1,16 +1,17 @@
 import mongoose from "mongoose";
 import { type IService } from "./service.dto";
 
-const Schema = mongoose.Schema;
-
-const ServiceSchema = new Schema<IService>(
+const serviceSchema = new mongoose.Schema<IService>(
   {
     name: { type: String, required: true },
-    pricePerCall: { type: Number, required: true },
+    description: { type: String },
     endpoint: { type: String, required: true },
-    description: { type: String, required: false },
+    pricePerCall: { type: Number, required: true },
+    active: { type: Boolean, default: true },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-export default mongoose.model<IService>("service", ServiceSchema);
+const ServiceSchema = mongoose.model("Service", serviceSchema);
+
+export default ServiceSchema;

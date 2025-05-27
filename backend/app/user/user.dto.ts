@@ -1,13 +1,16 @@
-import { type BaseSchema } from "../common/dto/base.dto";
+import { ObjectId } from "mongoose";
 
-export interface IUser extends BaseSchema {
+export interface IUser {
+  _id: string;
+  name: string;
   email: string;
   password: string;
   role: string;
   wallet: {
     balance: number;
-    freeCredits: number
-  }
-  createdAt: string;
-  apps: string[];
+    freeCredits: number;
+  };
+  apps?: ObjectId[];
+  createdAt?: string;
+  updatedAt?: string;
 }

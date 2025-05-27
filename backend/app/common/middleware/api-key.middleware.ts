@@ -74,7 +74,7 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
     }
 
     
-    if (app.blockedApis?.includes(service._id)) {
+    if (app.blockedApis?.includes(service._id as any)) {
       res.status(401).json({
         success: false,
         error_code: 401,
@@ -85,7 +85,7 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
     }
 
    
-    if (!app.subscribedApis?.includes(service._id)) {
+    if (!app.subscribedApis?.includes(service._id as any)) {
       res.status(403).json({
         success: false,
         error_code: 403,

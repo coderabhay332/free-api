@@ -9,7 +9,7 @@ export const createApp = async (userId: string, data: IApp) => {
   if (!user) {
     throw new Error("User not found");
   }
-  user.apps.push(result._id);
+  user.apps?.push(result._id as any);
   await user.save();
   const apiKey = generateApiKey();
   const apiKeyDoc = await ApiKeySchema.create({ key: apiKey, app: result._id, isActive: true });

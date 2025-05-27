@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import { type IUser } from "./user.dto";
-const Schema = mongoose.Schema;
 import bcrypt from "bcrypt";
 
 const hashPassword = async (password: string) => {
@@ -8,26 +7,27 @@ const hashPassword = async (password: string) => {
   return hash;
 };
 
-
-const UserSchema = new Schema<IUser>(
+const userSchema = new mongoose.Schema<IUser>(
   {
-    email: { type: String, required: true },
-    role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
+    email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
     wallet: {
-    balance: { type: Number, default: 0 },
-    freeCredits: { type: Number, default: 100 }
+      balance: { type: Number, default: 0 },
+      freeCredits: { type: Number, default: 100 }
     },
-    apps: [{ type: Schema.Types.ObjectId, ref: 'App' }],
+    apps: [{ type: mongoose.Schema.Types.ObjectId, ref: 'App' }],
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-UserSchema.pre("save", async function (next) {
+userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     (this as any).password = await hashPassword((this as any).password);
   }
   next();
 });
 
-export default mongoose.model<IUser>("user", UserSchema);
+const UserSchema = mongoose.model("User", userSchema);
+
+export default UserSchema;

@@ -5,4 +5,5 @@ export interface IService extends BaseSchema {
   pricePerCall: number;
   endpoint: string;
   description?: string;
+  active: boolean;
 }

@@ -1,11 +1,14 @@
 import { type BaseSchema } from "../common/dto/base.dto";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
-export interface IApp extends BaseSchema {
+export interface IApp {
+  _id?: string;
   name: string;
-  user: ObjectId;
-  createdAt: string;
-  apiKey: ObjectId;
-  subscribedApis: string[]; 
-  blockedApis: string[];
+  user: Types.ObjectId;
+  apiKey?: Types.ObjectId;
+  subscribedApis?: Types.ObjectId[];
+  blockedApis?: Types.ObjectId[];
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }

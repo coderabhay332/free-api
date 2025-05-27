@@ -8,6 +8,10 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const result = await userService.createUser(req.body);
   res.send(createResponse(result, "User created sucssefully"));
 });
+export const me = asyncHandler(async (req: Request, res: Response) => {
+  const result = await userService.me(req.user as any);
+  res.send(createResponse(result, "User fetched sucssefully"));
+});
 
 export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   const result = await userService.updateUser(req.params.id, req.body);
@@ -34,8 +38,6 @@ export const getAllUser = asyncHandler(async (req: Request, res: Response) => {
   res.send(createResponse(result));
 });
 
-
-
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const result = await userService.login(email, password);
@@ -47,15 +49,23 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     { expiresIn: '1h' }
   );
 
+  const refreshToken = jwt.sign(
+    { id: result._id },
+    process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+    { expiresIn: '7d' }
+  );
 
-  res.json({
+  res.json(createResponse({
     accessToken,
+    refreshToken,
     user: {
       id: result._id,
       email: result.email,
-      role: result.role
+      role: result.role,
+      name: result.name,
+      wallet: result.wallet
     }
-  });
+  }, "Login successful"));
 });
 
 export const createApp = asyncHandler(async (req: Request, res: Response) => {
@@ -65,9 +75,13 @@ export const createApp = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const subscribeApi = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.user as any)?.id;
-  const result = await userService.subscribeApi(userId, req.params.id, req.body.appId);
-  res.send(createResponse(result, "Api subscribed sucssefully"));
+  try {
+    const userId = (req.user as any)?.id;
+    const result = await userService.subscribeApi(userId, req.params.id, req.body.appId);
+    res.send(createResponse(result, "Api subscribed successfully"));
+  } catch (error: any) {
+    res.status(400).send(createResponse(null, error.message));
+  }
 });
 
 export const blockApi = asyncHandler(async (req: Request, res: Response) => {

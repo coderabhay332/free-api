@@ -1,17 +1,18 @@
 import mongoose from "mongoose";
 import { type IApp } from "./app.dto";
 
-const Schema = mongoose.Schema;
-
-const AppSchema = new Schema<IApp>(
+const appSchema = new mongoose.Schema<IApp>(
   {
     name: { type: String, required: true },
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    apiKey: { type: Schema.Types.ObjectId, ref: 'Apikey' },
-    subscribedApis: [{ type: Schema.Types.ObjectId, ref: 'Service', required: false }],
-    blockedApis: [{ type: Schema.Types.ObjectId, ref: 'Service', required: false }]
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    apiKey: { type: mongoose.Schema.Types.ObjectId, ref: "ApiKey" },
+    subscribedApis: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
+    blockedApis: [{ type: mongoose.Schema.Types.ObjectId, ref: "Service" }],
+    active: { type: Boolean, default: true },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-export default mongoose.model<IApp>("app", AppSchema);
+const AppSchema = mongoose.model<IApp>("App", appSchema);
+
+export default AppSchema;
