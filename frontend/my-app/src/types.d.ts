@@ -1,8 +1,57 @@
 export interface ApiResponse<T> {
-  _id: string;
-  data: T;
-  message: string;
   success: boolean;
+  message: string;
+  data: T;
+}
+
+export interface Service {
+  _id: string;
+  name: string;
+  description: string;
+  endpoint: string;
+  method: string;
+  pricePerCall: number;
+  isActive: boolean;
+  module: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface App {
+  apiKey: any;
+  _id: string;
+  name: string;
+  description: string;
+  user: string;
+  subscribedApis: string[];
+  blockedApis: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  wallet: {
+    balance: number;
+    freeCredits: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServiceListResponse {
+  success: boolean;
+  message: string;
+  data: Service[];
+}
+
+export interface AppListResponse {
+  success: boolean;
+  message: string;
+  data: App[];
 }
 
 export interface Api {
@@ -21,23 +70,7 @@ export interface Api {
   updatedAt: string;
   module: string;
 }
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  plan; string;
-  apiKey: string;
-  subscribedApis: {
-    api: Types.ObjectId;
-   
-    hit: number;
-  }[];
-  credit: number;
-  createdAt: string;
-  updatedAt: string;
-}
+
 export interface ApiListResponse {
   data: Api[];
   message: string;

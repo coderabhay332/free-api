@@ -7,7 +7,7 @@ import {
   Alert 
 } from '@mui/material';
 import { useRegisterMutation } from '../services/api';
-import { useNavigate } from 'react-router-dom'; // Add this import
+import { useNavigate } from 'react-router-dom'; 
 
 interface RegisterProps {
   switchToLogin: () => void;
@@ -36,10 +36,7 @@ const Register: React.FC<RegisterProps> = ({ switchToLogin }) => {
       await register({
           name,
           email,
-          password,
-          confirmPassword,
-          apiKey: '',
-          string: ''  // Required by User type
+          password
       }).unwrap();
       navigate('/login'); // Redirect on success
     } catch (err: any) {
