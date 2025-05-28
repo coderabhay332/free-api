@@ -1,22 +1,52 @@
-import React from 'react';
-import { Card, Statistic, Typography, Spin } from 'antd';
+import React, { Suspense, lazy } from 'react';
+import { Card, Statistic, Typography, Spin, Skeleton } from 'antd';
 import { ApiOutlined, DollarOutlined, CheckCircleOutlined, CloseCircleOutlined, UserOutlined } from '@ant-design/icons';
 import { useGetUserAnalyticsQuery } from '../services/api';
 
 const { Title } = Typography;
+
+const StatCardSkeleton: React.FC = () => (
+  <Card 
+    style={{
+      borderRadius: '8px',
+      border: '1px solid #f0f0f0',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      marginBottom: '16px',
+      transition: 'all 0.2s ease'
+    }}
+    bodyStyle={{ padding: '24px' }}
+  >
+    <Skeleton.Input active size="small" style={{ width: 100, marginBottom: '8px' }} />
+    <Skeleton.Input active size="large" style={{ width: 150 }} />
+  </Card>
+);
 
 const UserAnalytics: React.FC = () => {
   const { data, isLoading, error } = useGetUserAnalyticsQuery();
 
   if (isLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        padding: '60px'
+      <div style={{
+        padding: '32px',
+        maxWidth: '800px',
+        margin: '0 auto',
+        backgroundColor: '#fafafa',
+        minHeight: '100vh'
       }}>
-        <Spin size="large" />
+        <Skeleton.Input active size="large" style={{ width: 200, marginBottom: '32px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
+            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <div style={{ width: '48%' }}><StatCardSkeleton /></div>
+          </div>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
+            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
+          </div>
+        </div>
       </div>
     );
   }

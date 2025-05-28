@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useGetAllAppsQuery, useGetAllServicesQuery, useSubscribeServiceMutation, useBlockServiceMutation, useUnblockServiceMutation, useMeQuery, useAddFundsMutation } from '../services/api';
-import { Typography, Button, Spin, message, Modal, Input } from 'antd';
+import { Typography, Button, Spin, message, Modal, Input, Skeleton } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import CreateAppModal from '../components/CreateAppModal';
-import AppCard from '../components/AppCard';
-import EmptyAppsState from '../components/EmptyAppsState';
-import AppDetailsModal from '../components/AppDetailsModal';
-import Wallet from '../components/Wallet';
+import WalletSkeleton from '../components/WalletSkeleton';
+import AppCardSkeleton from '../components/AppCardSkeleton';
 
 const { Title } = Typography;
+
+// Lazy load components
+const CreateAppModal = lazy(() => import('../components/CreateAppModal'));
+const AppCard = lazy(() => import('../components/AppCard'));
+const EmptyAppsState = lazy(() => import('../components/EmptyAppsState'));
+const AppDetailsModal = lazy(() => import('../components/AppDetailsModal'));
+const Wallet = lazy(() => import('../components/Wallet'));
 
 const AppPage: React.FC = () => {
   const { data: appsData, isLoading: isLoadingApps, refetch: refetchApps } = useGetAllAppsQuery();
@@ -97,15 +101,38 @@ const AppPage: React.FC = () => {
     }
   };
 
+  const renderSkeletons = (count: number) => {
+    return Array(count).fill(0).map((_, index) => (
+      <AppCardSkeleton key={index} />
+    ));
+  };
+
   if (isLoadingApps || isLoadingServices || isLoadingUser) {
     return (
       <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        padding: '60px'
+        padding: '32px',
+        maxWidth: '1000px',
+        margin: '0 auto',
+        backgroundColor: '#fafafa',
+        minHeight: '100vh'
       }}>
-        <Spin size="large" />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '32px'
+        }}>
+          <Skeleton.Input active size="large" style={{ width: 200 }} />
+          <Skeleton.Button active size="large" style={{ width: 150 }} />
+        </div>
+        <WalletSkeleton />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '16px'
+        }}>
+          {renderSkeletons(3)}
+        </div>
       </div>
     );
   }
@@ -149,11 +176,13 @@ const AppPage: React.FC = () => {
       </div>
 
       {/* Wallet */}
-      <Wallet 
-        balance={userData?.data?.wallet?.balance || 0}
-        freeCredits={userData?.data?.wallet?.freeCredits || 0}
-        onAddFunds={handleAddFunds}
-      />
+      <Suspense fallback={<WalletSkeleton />}>
+        <Wallet 
+          balance={userData?.data?.wallet?.balance || 0}
+          freeCredits={userData?.data?.wallet?.freeCredits || 0}
+          onAddFunds={handleAddFunds}
+        />
+      </Suspense>
 
       {/* Apps Grid */}
       {appsData?.data && appsData.data.length > 0 ? (
@@ -162,38 +191,44 @@ const AppPage: React.FC = () => {
           gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
           gap: '16px'
         }}>
-          {appsData.data.map((app: any) => (
-            <AppCard
-              key={app._id}
-              app={app}
-              onClick={() => handleAppSelect(app)}
-            />
-          ))}
+          <Suspense fallback={renderSkeletons(3)}>
+            {appsData.data.map((app: any) => (
+              <AppCard
+                key={app._id}
+                app={app}
+                onClick={() => handleAppSelect(app)}
+              />
+            ))}
+          </Suspense>
         </div>
       ) : (
-        <EmptyAppsState onCreateClick={() => setIsCreateModalVisible(true)} />
+        <Suspense fallback={<div style={{ height: '200px' }}><Spin size="large" /></div>}>
+          <EmptyAppsState onCreateClick={() => setIsCreateModalVisible(true)} />
+        </Suspense>
       )}
 
       {/* Modals */}
-      <CreateAppModal
-        visible={isCreateModalVisible}
-        onClose={() => setIsCreateModalVisible(false)}
-        onSuccess={refetchApps}
-      />
+      <Suspense fallback={null}>
+        <CreateAppModal
+          visible={isCreateModalVisible}
+          onClose={() => setIsCreateModalVisible(false)}
+          onSuccess={refetchApps}
+        />
 
-      <AppDetailsModal
-        visible={isModalVisible}
-        onClose={() => {
-          setIsModalVisible(false);
-          setSelectedApp(null);
-        }}
-        app={selectedApp}
-        services={servicesData?.data || []}
-        onSubscribe={handleSubscribe}
-        onBlock={handleBlock}
-        onUnblock={handleUnblock}
-        loadingActions={loadingActions}
-      />
+        <AppDetailsModal
+          visible={isModalVisible}
+          onClose={() => {
+            setIsModalVisible(false);
+            setSelectedApp(null);
+          }}
+          app={selectedApp}
+          services={servicesData?.data || []}
+          onSubscribe={handleSubscribe}
+          onBlock={handleBlock}
+          onUnblock={handleUnblock}
+          loadingActions={loadingActions}
+        />
+      </Suspense>
 
       {/* Add Funds Modal */}
       <Modal
