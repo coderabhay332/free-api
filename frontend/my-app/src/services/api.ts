@@ -75,7 +75,7 @@ export const api = createApi({
       providesTags: ["App"],
     }),
 
-    createApp: builder.mutation<ApiResponse<App>, { name: string; description: string }>({
+    createApp: builder.mutation<ApiResponse<App>, { name: string;user: string }>({
       query: (body) => ({
         url: `/apps/create-app`,
         method: "POST",

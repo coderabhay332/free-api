@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Input, Button, message } from 'antd';
 import { useCreateAppMutation } from '../services/api';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store/store';
 
 interface CreateAppModalProps {
   visible: boolean;
@@ -16,18 +18,22 @@ const CreateAppModal: React.FC<CreateAppModalProps> = ({
   const [newAppName, setNewAppName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createApp] = useCreateAppMutation();
-
+  const { auth } = useSelector((state: RootState) => state);
+  console.log(auth)
+  console.log(auth?.user?.id)
   const handleCreateApp = async () => {
     if (!newAppName.trim()) {
       message.error('Please enter an app name');
       return;
     }
+   
 
     setIsCreating(true);
     try {
       await createApp({
         name: newAppName,
-        description: ''
+        user: auth?.user?.id || '',
+    
       }).unwrap();
       message.success('App created successfully');
       onClose();
