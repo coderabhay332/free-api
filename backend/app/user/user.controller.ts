@@ -87,13 +87,13 @@ export const subscribeApi = asyncHandler(async (req: Request, res: Response) => 
 export const blockApi = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req.user as any)?.id;
   const result = await userService.blockApi(userId, req.params.id, req.body.appId);
-  res.send(createResponse(result, "Api blocked sucssefully"));
+  res.send(createResponse( "Api blocked sucssefully"));
 });
 
 export const unblockApi = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req.user as any)?.id;
   const result = await userService.unblockApi(userId, req.params.id, req.body.appId);
-  res.send(createResponse(result, "Api unblocked sucssefully"));
+  res.send(createResponse( "Api unblocked sucssefully"));
 });
 export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
   const result = await userService.refreshToken(req.body.refreshToken);

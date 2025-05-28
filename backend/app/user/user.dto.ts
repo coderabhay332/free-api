@@ -6,6 +6,7 @@ export interface IUser {
   email: string;
   password: string;
   role: string;
+  refreshToken?: string;
   wallet: {
     balance: number;
     freeCredits: number;
@@ -13,4 +14,5 @@ export interface IUser {
   apps?: ObjectId[];
   createdAt?: string;
   updatedAt?: string;
+  
 }

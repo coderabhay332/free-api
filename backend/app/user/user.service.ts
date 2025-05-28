@@ -8,6 +8,7 @@ import ApiKeySchema from "../apikey/apikey.schema";
 import ServiceSchema from "../service/service.schema";
 import mongoose from "mongoose";
 import { Types } from "mongoose";
+import jwt from "jsonwebtoken";
 
 export const createUser = async (data: IUser) => {
   const result = await UserSchema.create({ ...data, active: true });
@@ -62,6 +63,13 @@ export const login = async (email: string, password: string) => {
   if (!isPasswordValid) {
     throw new Error('Invalid password');
   }
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+    { expiresIn: '7d' }
+  );
+  user.refreshToken = refreshToken;
+  await user.save();
 
   return user;
 };
@@ -172,7 +180,6 @@ export const blockApi = async (userId: string, serviceId: string, appId: string)
     throw new Error("App not found");
   }
 
-  // Initialize arrays if they don't exist
   if (!app.subscribedApis) app.subscribedApis = [];
   if (!app.blockedApis) app.blockedApis = [];
 
@@ -211,11 +218,41 @@ export const unblockApi = async (userId: string, serviceId: string, appId: strin
 };
 
 export const refreshToken = async (refreshToken: string) => {
-  const result = await UserSchema.findOne({ refreshToken });
-  if (!result) {
-    throw new Error("User not found");
+  try {
+    const user = await UserSchema.findOne({ refreshToken });
+    if (!user) {
+      throw new Error("Invalid refresh token");
+    }
+
+    // Generate new tokens
+    const newAccessToken = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET || 'your-secret',
+      { expiresIn: '15m' }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+      { expiresIn: '7d' }
+    );
+
+    // Update user's refresh token
+    await UserSchema.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken });
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    };
+  } catch (error) {
+    throw new Error("Invalid refresh token");
   }
-  return result;
 };
 
 export const getAppByUserId = async (userId: string) => {

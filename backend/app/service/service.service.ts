@@ -1,5 +1,5 @@
 import { type IService } from "./service.dto";
-import ServiceSchema from "./service.schema";
+import ServiceSchema, { ServiceStatsSchema } from "./service.schema";
 import UserSchema from "../user/user.schema";
 import AppSchema from "../app/app.schema";
 
@@ -36,7 +36,6 @@ export const getAllService = async () => {
 };
 
 export const getWeather = async (userId: string, serviceId: string) => {
-  // Deduct credits from user's wallet
   const user = await UserSchema.findById(userId);
   const service = await ServiceSchema.findById(serviceId);
 
@@ -44,7 +43,7 @@ export const getWeather = async (userId: string, serviceId: string) => {
     throw new Error("User or service not found");
   }
 
-  // Deduct from free credits first, then from balance
+  
   if (user.wallet.freeCredits >= service.pricePerCall) {
     user.wallet.freeCredits -= service.pricePerCall;
   } else {
@@ -71,7 +70,6 @@ export const getWeather = async (userId: string, serviceId: string) => {
 };
 
 export const getRandomUser = async (userId: string, serviceId: string) => {
-  // Deduct credits from user's wallet
   const user = await UserSchema.findById(userId);
   const service = await ServiceSchema.findById(serviceId);
 
@@ -79,7 +77,6 @@ export const getRandomUser = async (userId: string, serviceId: string) => {
     throw new Error("User or service not found");
   }
 
-  // Deduct from free credits first, then from balance
   if (user.wallet.freeCredits >= service.pricePerCall) {
     user.wallet.freeCredits -= service.pricePerCall;
   } else {
@@ -90,7 +87,6 @@ export const getRandomUser = async (userId: string, serviceId: string) => {
 
   await user.save();
 
-  // Return mock user data
   return {
     name: {
       first: "John",
@@ -112,7 +108,6 @@ export const getRandomUser = async (userId: string, serviceId: string) => {
 };
 
 export const getJoke = async (userId: string, serviceId: string) => {
-  // Deduct credits from user's wallet
   const user = await UserSchema.findById(userId);
   const service = await ServiceSchema.findById(serviceId);
 
@@ -120,7 +115,6 @@ export const getJoke = async (userId: string, serviceId: string) => {
     throw new Error("User or service not found");
   }
 
-  // Deduct from free credits first, then from balance
   if (user.wallet.freeCredits >= service.pricePerCall) {
     user.wallet.freeCredits -= service.pricePerCall;
   } else {
@@ -140,7 +134,6 @@ export const getJoke = async (userId: string, serviceId: string) => {
 };
 
 export const getQuote = async (userId: string, serviceId: string) => {
-  // Deduct credits from user's wallet
   const user = await UserSchema.findById(userId);
   const service = await ServiceSchema.findById(serviceId);
 
@@ -168,7 +161,6 @@ export const getQuote = async (userId: string, serviceId: string) => {
 };
 
 export const getNews = async (userId: string, serviceId: string) => {
-  // Deduct credits from user's wallet
   const user = await UserSchema.findById(userId);
   const service = await ServiceSchema.findById(serviceId);
 
@@ -176,7 +168,6 @@ export const getNews = async (userId: string, serviceId: string) => {
     throw new Error("User or service not found");
   }
 
-  // Deduct from free credits first, then from balance
   if (user.wallet.freeCredits >= service.pricePerCall) {
     user.wallet.freeCredits -= service.pricePerCall;
   } else {
@@ -187,7 +178,6 @@ export const getNews = async (userId: string, serviceId: string) => {
 
   await user.save();
 
-  // Return mock news data
   return [
     {
       title: "Tech Company Announces Revolutionary AI Breakthrough",
@@ -214,33 +204,40 @@ export const getUserAnalytics = async (userId: string) => {
   const user = await UserSchema.findById(userId);
   const apps = await AppSchema.find({ user: userId });
   
-  // Get all services that user has subscribed to
   const subscribedServices = await ServiceSchema.find({
     _id: { $in: apps.flatMap(app => app.subscribedApis || []) }
   });
 
-  // Calculate total hits and spent amount from hitStats
-  const totalHits = subscribedServices.reduce((acc, service) => {
-    const userHitStat = service.hitStats.find(stat => stat.user.toString() === userId);
-    return acc + (userHitStat?.hitCount || 0);
-  }, 0);
+  const serviceStats = await Promise.all(subscribedServices.map(async (service) => {
+    const userHitStat = await ServiceStatsSchema.findOne({ user: userId, service: service._id });
+    const hitCount = userHitStat?.hitCount || 0;
+    return {
+      serviceId: service._id,
+      serviceName: service.name,
+      hits: hitCount,
+      spent: hitCount * service.pricePerCall,
+      pricePerCall: service.pricePerCall,
+      lastHit: userHitStat?.lastHit || null,
+      recentHits: userHitStat?.hitHistory?.slice(-5).map(hit => ({
+        timestamp: hit.timestamp,
+        responseTime: hit.responseTime,
+        status: hit.status
+      })) || []
+    };
+  }));
 
-  const totalSpent = subscribedServices.reduce((acc, service) => {
-    const userHitStat = service.hitStats.find(stat => stat.user.toString() === userId);
-    return acc + ((userHitStat?.hitCount || 0) * service.pricePerCall);
-  }, 0);
-
-  // Calculate average response time
- 
-
+  const totalHits = serviceStats.reduce((sum, stat) => sum + stat.hits, 0);
+  const totalSpent = serviceStats.reduce((sum, stat) => sum + stat.spent, 0);
 
   return {
-    totalHits,
-    totalSpent,
-    subscribedServicesCount: subscribedServices.length,
-    successCount: totalHits, // Since we only record successful hits
-    failureCount: 0, // We don't track failures in hitStats
-    
+    summary: {
+      totalHits,
+      totalSpent,
+      subscribedServicesCount: subscribedServices.length,
+      successCount: totalHits,
+      failureCount: 0
+    },
+    serviceDetails: serviceStats
   };
 };
 
@@ -249,43 +246,67 @@ export const getAdminAnalytics = async () => {
   const apps = await AppSchema.find();
   const services = await ServiceSchema.find();
 
-  const totalHits = services.reduce((acc, service) => 
-    acc + service.hitStats.reduce((hitAcc, stat) => hitAcc + stat.hitCount, 0), 0);
+  // Get detailed service statistics
+  const serviceStats = await Promise.all(services.map(async (service) => {
+    const serviceHits = await ServiceStatsSchema.find({ service: service._id });
+    const totalHits = serviceHits.reduce((acc, stat) => acc + stat.hitCount, 0);
+    const totalRevenue = totalHits * service.pricePerCall;
+    const uniqueUsers = new Set(serviceHits.map(stat => stat.user.toString())).size;
+    
+    // Get recent activity
+    const recentHits = serviceHits
+      .flatMap(stat => stat.hitHistory || [])
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, 5);
 
-  const totalRevenue = services.reduce((acc, service) => {
-    const serviceHits = service.hitStats.reduce((hitAcc, stat) => hitAcc + stat.hitCount, 0);
-    return acc + (serviceHits * service.pricePerCall);
-  }, 0);
+    return {
+      serviceId: service._id,
+      name: service.name,
+      description: service.description,
+      pricePerCall: service.pricePerCall,
+      stats: {
+        totalHits,
+        totalRevenue,
+        uniqueUsers,
+        averageResponseTime: recentHits.reduce((acc, hit) => acc + (hit.responseTime || 0), 0) / recentHits.length || 0
+      },
+      recentActivity: recentHits.map(hit => ({
+        timestamp: hit.timestamp,
+        responseTime: hit.responseTime,
+        status: hit.status
+      }))
+    };
+  }));
 
-  // Calculate average response time
+  // Calculate overall statistics
+  const totalRevenue = serviceStats.reduce((sum, service) => sum + service.stats.totalRevenue, 0);
+  const totalHits = serviceStats.reduce((sum, service) => sum + service.stats.totalHits, 0);
+  const totalUniqueUsers = new Set(serviceStats.flatMap(service => 
+    service.stats.uniqueUsers
+  )).size;
 
-
-
-  // Get top 5 services by hits
-  const topServices = services
-    .map(service => {
-      const hitCount = service.hitStats.reduce((acc, stat) => acc + stat.hitCount, 0);
-      return {
-        _id: service._id,
-        hitCount,
-        revenue: hitCount * service.pricePerCall,
-        service: {
-          name: service.name,
-          description: service.description
-        }
-      };
-    })
-    .sort((a, b) => b.hitCount - a.hitCount)
+  // Get top performing services
+  const topServices = [...serviceStats]
+    .sort((a, b) => b.stats.totalHits - a.stats.totalHits)
     .slice(0, 5);
 
   return {
-    totalUsers: users.length,
-    totalApps: apps.length,
-    totalServices: services.length,
-    totalHits,
-    totalRevenue,
-    successCount: totalHits, // Since we only record successful hits
-    failureCount: 0, // We don't track failures in hitStats
-    topServices
+    summary: {
+      totalUsers: users.length,
+      totalApps: apps.length,
+      totalServices: services.length,
+      totalRevenue,
+      totalHits,
+      totalUniqueUsers,
+      averageHitsPerService: totalHits / services.length || 0,
+      averageRevenuePerService: totalRevenue / services.length || 0
+    },
+    topServices: topServices.map(service => ({
+      name: service.name,
+      hits: service.stats.totalHits,
+      revenue: service.stats.totalRevenue,
+      uniqueUsers: service.stats.uniqueUsers
+    })),
+    serviceDetails: serviceStats
   };
 };

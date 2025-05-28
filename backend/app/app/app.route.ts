@@ -7,11 +7,11 @@ import { roleAuth } from "../common/middleware/role-auth.middleware";
 const router = Router();
 
 router
-  .get("/", roleAuth(["ADMIN", "USER"]), appController.getAllApp)
-  
-  .post("/create-app", catchError,roleAuth(["ADMIN", "USER"]), appController.createApp)
-  
-  .get("/:id", appController.getAppById);
+  .get("/", catchError, roleAuth(["ADMIN", "USER"]), appController.getAllApp)
+  .post("/create-app",appValidator.createApp, catchError,roleAuth(["ADMIN", "USER"]), appController.createApp)
+  .get("/:id",roleAuth(["ADMIN", "USER"]), catchError, appController.getAppById)
+  .put("/:id", appValidator.updateApp, catchError, roleAuth(["ADMIN", "USER"]), appController.updateApp)
+  .delete("/:id", catchError, roleAuth(["ADMIN", "USER"]), appController.deleteApp);
 
 
 export default router;

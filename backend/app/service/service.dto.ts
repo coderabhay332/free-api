@@ -6,8 +6,11 @@ export interface IService extends BaseSchema {
   endpoint: string;
   description?: string;
   active: boolean;
-  hitStats: {
-    user: string;
-    hitCount: number;
-  }[];
+
+}
+
+export interface IServiceStats extends BaseSchema {
+  user: string;
+  service: string;
+  hitCount: number;
 }

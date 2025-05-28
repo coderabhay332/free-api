@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema<IUser>(
       freeCredits: { type: Number, default: 100 }
     },
     apps: [{ type: mongoose.Schema.Types.ObjectId, ref: 'App' }],
+    refreshToken: { type: String, default: "" },
   },
   { timestamps: true }
 );

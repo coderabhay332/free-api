@@ -3,6 +3,7 @@ import ApiKeySchema from "../../apikey/apikey.schema";
 import UserSchema from "../../user/user.schema";
 import ServiceSchema from "../../service/service.schema";
 import AppSchema from "../../app/app.schema";
+import { ServiceStatsSchema } from "../../service/service.schema";
 
 export const validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
@@ -137,15 +138,32 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
     req.service = service;
     req.apiKey = apiKeyDoc;
 
-    const currentHit = service.hitStats.find(stat => stat.user.toString() === user._id.toString());
+    const currentHit = await ServiceStatsSchema.findOne({ user: user._id, service: service._id });
+    const responseTime = Date.now() - startTime;
+    
     if (currentHit) {
       currentHit.hitCount++;
+      currentHit.lastHit = new Date();
+      currentHit.hitHistory.push({
+        timestamp: new Date(),
+        responseTime,
+        status: 'SUCCESS'
+      });
+      await currentHit.save();
     } else {
-      service.hitStats.push({ user: user._id, hitCount: 1 });
+      await ServiceStatsSchema.create({ 
+        user: user._id, 
+        service: service._id, 
+        hitCount: 1,
+        lastHit: new Date(),
+        hitHistory: [{
+          timestamp: new Date(),
+          responseTime,
+          status: 'SUCCESS'
+        }]
+      });
     }
-    await service.save();
-   
-  
+    
     next();
   } catch (error: any) {
     console.error('API Key Middleware Error:', error);

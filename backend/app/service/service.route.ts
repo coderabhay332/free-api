@@ -8,23 +8,25 @@ import { roleAuth } from "../common/middleware/role-auth.middleware";
 const router = Router();
 
 router
-  .get("/all", serviceController.getAllService)
-  .get("/:id", serviceController.getServiceById)
-  
-  // Demo API endpoints
-  .get("/demo/weather", validateApiKey, serviceController.getWeather)
-  .get("/demo/random-user", validateApiKey, serviceController.getRandomUser)
-  .get("/demo/joke", validateApiKey, serviceController.getJoke)
-  .get("/demo/quote", validateApiKey, serviceController.getQuote)
-  .get("/demo/news", validateApiKey, serviceController.getNews)
-  .get("/analytics/user", roleAuth(["USER", "ADMIN"]), serviceController.getUserServiceAnalytics)
-  .get("/analytics/admin", roleAuth(["ADMIN"]), serviceController.getAdminServiceAnalytics)
+  .get("/all", catchError, roleAuth(["ADMIN", "USER"]), serviceController.getAllService)
+  .get("/:id", catchError, roleAuth(["ADMIN", "USER"]), serviceController.getServiceById)
+  .get("/demo/weather", catchError, validateApiKey, serviceController.getWeather)
+  .get("/demo/random-user", catchError, validateApiKey, serviceController.getRandomUser)
+  .get("/demo/joke", catchError, validateApiKey, serviceController.getJoke)
+  .get("/demo/quote", catchError, validateApiKey, serviceController.getQuote)
+  .get("/demo/news", catchError, validateApiKey, serviceController.getNews)
+  .get("/analytics/user", catchError, roleAuth(["USER", "ADMIN"]), serviceController.getUserServiceAnalytics)
+  .get("/analytics/admin", catchError, roleAuth(["ADMIN"]), serviceController.getAdminServiceAnalytics)
   .post(
     "/",
     serviceValidator.createService,
     catchError,
-    serviceController.createService,
-  );
+    roleAuth(["ADMIN"]),
+    serviceController.createService,  
+  )
+  .put("/:id", serviceValidator.updateService, catchError, roleAuth(["ADMIN"]), serviceController.updateService)
+  .delete("/:id", catchError, roleAuth(["ADMIN"]), serviceController.deleteService)
+
 
 
 export default router;
