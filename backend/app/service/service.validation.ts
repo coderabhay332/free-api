@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 
 export const createService = [
   body("name")
@@ -43,4 +43,20 @@ export const editService = [
   body("pricePerCall").isNumeric().withMessage("pricePerCall must be a number"),
   body("endpoint").isString().withMessage("endpoint must be a string"),
   body("description").isString().withMessage("description must be a string"),
+];
+
+export const deleteService = [
+  param("id")
+    .notEmpty()
+    .withMessage("id is required")
+    .isString()
+    .withMessage("id must be a string"),
+];
+
+export const getServiceById = [
+  param("id")
+    .notEmpty()
+    .withMessage("id is required")
+    .isString()
+    .withMessage("id must be a string"),
 ];

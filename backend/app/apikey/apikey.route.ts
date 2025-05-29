@@ -7,10 +7,10 @@ import { roleAuth } from "../common/middleware/role-auth.middleware";
 const router = Router();
 
 router
-  .get("/", catchError, roleAuth(["ADMIN", "USER"]), apikeyController.getAllApikey)
-  .get("/:id", catchError, roleAuth(["ADMIN", "USER"]), apikeyController.getApikeyById)
-  .put("/:id", apikeyValidator.updateApikey, catchError, roleAuth(["ADMIN", "USER"]), apikeyController.updateApikey)
-  .delete("/:id", catchError, roleAuth(["ADMIN", "USER"]), apikeyController.deleteApikey)
+  .get("/", catchError, roleAuth(["ADMIN"]), apikeyController.getAllApikey)
+  .get("/:id", apikeyValidator.getApikeyById, catchError, roleAuth(["ADMIN"]), apikeyController.getApikeyById)
+  .put("/:id", apikeyValidator.updateApikey, catchError, roleAuth(["ADMIN"]), apikeyController.updateApikey)
+  .delete("/:id", apikeyValidator.deleteApikey, catchError, roleAuth(["ADMIN"]), apikeyController.deleteApikey)
   .post(
     "/",
     apikeyValidator.createApikey,

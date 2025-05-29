@@ -2,9 +2,10 @@ import * as appService from "./app.service";
 import { createResponse } from "../common/helper/response.helper";
 import asyncHandler from "express-async-handler";
 import { type Request, type Response } from "express";
+import { type IUser } from "../user/user.dto";
 
 export const createApp = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.user as any)?.id;
+  const userId = (req.user as IUser)?.id;
   const result = await appService.createApp(userId,req.body);
   res.send(createResponse(result, "App created sucssefully"));
 });

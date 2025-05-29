@@ -13,11 +13,6 @@ export const updateApikey = async (id: string, data: IApikey) => {
   return result;
 };
 
-export const editApikey = async (id: string, data: Partial<IApikey>) => {
-  const result = await ApikeySchema.findOneAndUpdate({ _id: id }, data);
-  return result;
-};
-
 export const deleteApikey = async (id: string) => {
   const result = await ApikeySchema.deleteOne({ _id: id });
   return result;

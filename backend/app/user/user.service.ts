@@ -9,6 +9,7 @@ import ServiceSchema from "../service/service.schema";
 import mongoose from "mongoose";
 import { Types } from "mongoose";
 import jwt from "jsonwebtoken";
+import { createUserTokens } from "../common/services/passport-jwt.services";
 
 export const createUser = async (data: IUser) => {
   const result = await UserSchema.create({ ...data, active: true });
@@ -217,27 +218,24 @@ export const unblockApi = async (userId: string, serviceId: string, appId: strin
   return updatedApp;
 };
 
+export const updateUserToken = async (user: IUser, refreshToken: string) => {
+  await UserSchema.findByIdAndUpdate(user.id, { refreshToken: refreshToken });
+}
+
 export const refreshToken = async (refreshToken: string) => {
   try {
-    const user = await UserSchema.findOne({ refreshToken });
+    const user = await UserSchema.findOne({ refreshToken: refreshToken });
+    console.log("user", user);
     if (!user) {
       throw new Error("Invalid refresh token");
     }
-
+    const tokens = createUserTokens(user as IUser)
+    
     // Generate new tokens
-    const newAccessToken = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret',
-      { expiresIn: '15m' }
-    );
+    const newAccessToken = tokens.accessToken
 
-    const newRefreshToken = jwt.sign(
-      { id: user._id },
-      process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-      { expiresIn: '7d' }
-    );
+    const newRefreshToken = tokens.refreshToken
 
-    // Update user's refresh token
     await UserSchema.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken });
 
     return {
@@ -256,7 +254,9 @@ export const refreshToken = async (refreshToken: string) => {
 };
 
 export const getAppByUserId = async (userId: string) => {
+  console.log("userId", userId);
   const result = await AppSchema.find({ user: userId }).lean();
+  console.log("result", result);
   return result;
 };
 

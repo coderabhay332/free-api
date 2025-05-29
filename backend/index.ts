@@ -11,7 +11,10 @@ import routes from "./app/routes";
 import { type IUser } from "./app/user/user.dto";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./app/swagger/swagger";
+import { loadConfig } from "./app/common/helper/config.helper";
+import { trackResponseTime } from "./app/common/middleware/response-time-tracker.middleware";
 
+loadConfig();
 
 declare global {
     namespace Express {
@@ -34,11 +37,10 @@ declare global {
   app.use(helmet()) 
   app.use(bodyParser.json());
 
-
-
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(express.json());
   app.use(morgan("dev")); 
+
   const initApp = async (): Promise<void> => {
     // init mongodb
     await initDB();
@@ -47,12 +49,10 @@ declare global {
     initPassport();
   
     // set base path to /api
-  
+    app.use(trackResponseTime);
     app.use("/api", routes);
     app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-  
-  
     app.get("/", (req: Request, res: Response) => {
       res.send({ status: "ok" });
     });

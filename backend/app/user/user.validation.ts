@@ -53,3 +53,20 @@ export const login = [
     .isString()
     .withMessage("password must be a string"),
 ];
+
+export const refreshToken = [
+  body("refreshToken")
+    .notEmpty()
+    .withMessage("refreshToken is required")
+    .isString()
+    .withMessage("refreshToken must be a string"),
+];
+
+export const addFunds = [
+  body("amount")
+    .notEmpty()
+    .withMessage("amount is required")
+    .isNumeric()
+    .withMessage("amount must be a number"),
+];
+

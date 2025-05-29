@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 
 export const createApikey = [
   body("key")
@@ -7,8 +7,6 @@ export const createApikey = [
     .isString()
     .withMessage("key must be a string"),
   body("app").notEmpty().withMessage("app is required"),
-  body("isActive").isBoolean().withMessage("isActive must be a boolean"),
-  body("createdAt"),
 ];
 
 export const updateApikey = [
@@ -22,9 +20,11 @@ export const updateApikey = [
   body("createdAt"),
 ];
 
-export const editApikey = [
-  body("key").isString().withMessage("key must be a string"),
-  body("app"),
-  body("isActive").isBoolean().withMessage("isActive must be a boolean"),
-  body("createdAt"),
+
+
+export const getApikeyById = [
+  param("id").isMongoId().withMessage("id must be a valid mongo id"),
+];  
+export const deleteApikey = [
+  param("id").isMongoId().withMessage("id must be a valid mongo id"),
 ];

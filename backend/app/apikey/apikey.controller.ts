@@ -17,11 +17,6 @@ export const updateApikey = asyncHandler(
   },
 );
 
-export const editApikey = asyncHandler(async (req: Request, res: Response) => {
-  const result = await apikeyService.editApikey(req.params.id, req.body);
-  res.send(createResponse(result, "Apikey updated sucssefully"));
-});
-
 export const deleteApikey = asyncHandler(
   async (req: Request, res: Response) => {
     const result = await apikeyService.deleteApikey(req.params.id);

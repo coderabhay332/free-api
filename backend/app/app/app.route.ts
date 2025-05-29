@@ -7,9 +7,9 @@ import { roleAuth } from "../common/middleware/role-auth.middleware";
 const router = Router();
 
 router
-  .get("/", catchError, roleAuth(["ADMIN", "USER"]), appController.getAllApp)
+  .get("/", catchError, roleAuth(["ADMIN"]), appController.getAllApp)
   .post("/create-app",appValidator.createApp, catchError,roleAuth(["ADMIN", "USER"]), appController.createApp)
-  .get("/:id",roleAuth(["ADMIN", "USER"]), catchError, appController.getAppById)
+  .get("/:id",appValidator.getAppById,catchError, roleAuth(["ADMIN", "USER"]), appController.getAppById)
   .put("/:id", appValidator.updateApp, catchError, roleAuth(["ADMIN", "USER"]), appController.updateApp)
   .delete("/:id", catchError, roleAuth(["ADMIN", "USER"]), appController.deleteApp);
 

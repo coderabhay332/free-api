@@ -9,14 +9,14 @@ const router = Router();
 
 router
   .get("/all", catchError, roleAuth(["ADMIN", "USER"]), serviceController.getAllService)
-  .get("/:id", catchError, roleAuth(["ADMIN", "USER"]), serviceController.getServiceById)
-  .get("/demo/weather", catchError, validateApiKey, serviceController.getWeather)
-  .get("/demo/random-user", catchError, validateApiKey, serviceController.getRandomUser)
-  .get("/demo/joke", catchError, validateApiKey, serviceController.getJoke)
-  .get("/demo/quote", catchError, validateApiKey, serviceController.getQuote)
-  .get("/demo/news", catchError, validateApiKey, serviceController.getNews)
-  .get("/analytics/user", catchError, roleAuth(["USER", "ADMIN"]), serviceController.getUserServiceAnalytics)
-  .get("/analytics/admin", catchError, roleAuth(["ADMIN"]), serviceController.getAdminServiceAnalytics)
+  .get("/:id", serviceValidator.getServiceById, catchError, roleAuth(["ADMIN", "USER"]), serviceController.getServiceById)
+  .get("/demo/weather", validateApiKey, serviceController.getWeather)
+  .get("/demo/random-user", validateApiKey, serviceController.getRandomUser)
+  .get("/demo/joke", validateApiKey, serviceController.getJoke)
+  .get("/demo/quote", validateApiKey, serviceController.getQuote)
+  .get("/demo/news", validateApiKey, serviceController.getNews)
+  .get("/user/analytics", roleAuth(["USER", "ADMIN"]), serviceController.getUserServiceAnalytics)
+  .get("/admin/analytics", roleAuth(["ADMIN"]), serviceController.getAdminServiceAnalytics)
   .post(
     "/",
     serviceValidator.createService,
@@ -25,7 +25,7 @@ router
     serviceController.createService,  
   )
   .put("/:id", serviceValidator.updateService, catchError, roleAuth(["ADMIN"]), serviceController.updateService)
-  .delete("/:id", catchError, roleAuth(["ADMIN"]), serviceController.deleteService)
+  .delete("/:id",serviceValidator.deleteService, catchError, roleAuth(["ADMIN"]), serviceController.deleteService)
 
 
 

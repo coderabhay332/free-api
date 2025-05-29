@@ -54,7 +54,6 @@ export const getWeather = async (userId: string, serviceId: string) => {
 
   await user.save();
 
-  // Return dummy weather data
   return {
     location: "New York",
     temperature: 72,
@@ -201,43 +200,61 @@ export const getNews = async (userId: string, serviceId: string) => {
 };
 
 export const getUserAnalytics = async (userId: string) => {
-  const user = await UserSchema.findById(userId);
-  const apps = await AppSchema.find({ user: userId });
-  
-  const subscribedServices = await ServiceSchema.find({
-    _id: { $in: apps.flatMap(app => app.subscribedApis || []) }
-  });
+  console.log("userId", userId);
+  const serviceStats = await ServiceStatsSchema.find({ user: userId })
+    .populate('service')
+    .sort({ lastHit: -1 });
+  console.log("serviceStats", serviceStats);
+  if (!serviceStats.length) {
+    return {
+      summary: {
+        totalHits: 0,
+        totalSpent: 0,
+        subscribedServicesCount: 0,
+        successCount: 0,
+        failureCount: 0
+      },
+      serviceDetails: []
+    };
+  }
 
-  const serviceStats = await Promise.all(subscribedServices.map(async (service) => {
-    const userHitStat = await ServiceStatsSchema.findOne({ user: userId, service: service._id });
-    const hitCount = userHitStat?.hitCount || 0;
+  
+  const totalHits = serviceStats.reduce((sum, stat) => sum + stat.hitCount, 0);
+  const totalSpent = serviceStats.reduce((sum, stat) => {
+    const service = stat.service as any;
+    return sum + (stat.hitCount * (service?.pricePerCall || 0));
+  }, 0);
+
+  
+  const uniqueServices = new Set(serviceStats.map(stat => stat.service._id.toString())).size;
+
+  // Format service details
+  const serviceDetails = serviceStats.map(stat => {
+    const service = stat.service as any;
     return {
       serviceId: service._id,
       serviceName: service.name,
-      hits: hitCount,
-      spent: hitCount * service.pricePerCall,
-      pricePerCall: service.pricePerCall,
-      lastHit: userHitStat?.lastHit || null,
-      recentHits: userHitStat?.hitHistory?.slice(-5).map(hit => ({
+      hits: stat.hitCount,
+      spent: stat.hitCount * (service?.pricePerCall || 0),
+      pricePerCall: service?.pricePerCall || 0,
+      lastHit: stat.lastHit,
+      recentHits: stat.hitHistory?.slice(-5).map(hit => ({
         timestamp: hit.timestamp,
         responseTime: hit.responseTime,
         status: hit.status
       })) || []
     };
-  }));
-
-  const totalHits = serviceStats.reduce((sum, stat) => sum + stat.hits, 0);
-  const totalSpent = serviceStats.reduce((sum, stat) => sum + stat.spent, 0);
+  });
 
   return {
     summary: {
       totalHits,
       totalSpent,
-      subscribedServicesCount: subscribedServices.length,
+      subscribedServicesCount: uniqueServices,
       successCount: totalHits,
       failureCount: 0
     },
-    serviceDetails: serviceStats
+    serviceDetails
   };
 };
 
@@ -245,15 +262,16 @@ export const getAdminAnalytics = async () => {
   const users = await UserSchema.find();
   const apps = await AppSchema.find();
   const services = await ServiceSchema.find();
+ 
 
-  // Get detailed service statistics
+  
   const serviceStats = await Promise.all(services.map(async (service) => {
     const serviceHits = await ServiceStatsSchema.find({ service: service._id });
     const totalHits = serviceHits.reduce((acc, stat) => acc + stat.hitCount, 0);
     const totalRevenue = totalHits * service.pricePerCall;
     const uniqueUsers = new Set(serviceHits.map(stat => stat.user.toString())).size;
     
-    // Get recent activity
+  
     const recentHits = serviceHits
       .flatMap(stat => stat.hitHistory || [])
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -278,14 +296,12 @@ export const getAdminAnalytics = async () => {
     };
   }));
 
-  // Calculate overall statistics
   const totalRevenue = serviceStats.reduce((sum, service) => sum + service.stats.totalRevenue, 0);
   const totalHits = serviceStats.reduce((sum, service) => sum + service.stats.totalHits, 0);
   const totalUniqueUsers = new Set(serviceStats.flatMap(service => 
     service.stats.uniqueUsers
   )).size;
 
-  // Get top performing services
   const topServices = [...serviceStats]
     .sort((a, b) => b.stats.totalHits - a.stats.totalHits)
     .slice(0, 5);

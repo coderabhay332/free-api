@@ -2,6 +2,8 @@ import * as serviceService from "./service.service";
 import { createResponse } from "../common/helper/response.helper";
 import asyncHandler from "express-async-handler";
 import { type Request, type Response } from "express";
+import { IUser } from "../user/user.dto";
+import createError from "http-errors";
 
 export const createService = asyncHandler(
   async (req: Request, res: Response) => {
@@ -45,7 +47,7 @@ export const getAllService = asyncHandler(
 
 export const getWeather = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getWeather(
-    (req.user as any)._id,
+    (req.user as IUser)?.id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -53,7 +55,7 @@ export const getWeather = asyncHandler(async (req: Request, res: Response) => {
 
 export const getRandomUser = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getRandomUser(
-    (req.user as any)._id,
+    (req.user as IUser)?.id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -61,7 +63,7 @@ export const getRandomUser = asyncHandler(async (req: Request, res: Response) =>
 
 export const getJoke = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getJoke(
-    (req.user as any)._id,
+    (req.user as IUser)?.id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -69,7 +71,7 @@ export const getJoke = asyncHandler(async (req: Request, res: Response) => {
 
 export const getQuote = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getQuote(
-    (req.user as any)._id,
+    (req.user as IUser)?.id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -77,15 +79,26 @@ export const getQuote = asyncHandler(async (req: Request, res: Response) => {
 
 export const getNews = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getNews(
-    (req.user as any)._id,
+    (req.user as IUser)?.id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
 });
 
 export const getUserServiceAnalytics = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.user as any)?.id;
-  const result = await serviceService.getUserAnalytics(userId);
+  
+  console.log("req.user", req.user);
+  if (!req.user) {
+    throw createError(401, "User not authenticated");
+  }
+
+  const userId = req.user.id;
+  if (!userId) {
+    throw createError(401, "User ID not found");
+  }
+
+  console.log("userId", userId);
+  const result = await serviceService.getUserAnalytics(userId.toString());
   res.send(createResponse(result));
 });
 

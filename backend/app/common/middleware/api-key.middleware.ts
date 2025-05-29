@@ -3,12 +3,11 @@ import ApiKeySchema from "../../apikey/apikey.schema";
 import UserSchema from "../../user/user.schema";
 import ServiceSchema from "../../service/service.schema";
 import AppSchema from "../../app/app.schema";
-import { ServiceStatsSchema } from "../../service/service.schema";
 
 export const validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
-  const startTime = Date.now();
   try {
-    const apiKey = req.query.key as string;
+    const apiKey = req.query.key as string || req.headers["x-api-key"] as string;
+
     console.log('API Key:', apiKey);
     console.log('Request Path:', req.path);
     
@@ -137,40 +136,12 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
     req.user = user;
     req.service = service;
     req.apiKey = apiKeyDoc;
-
-    const currentHit = await ServiceStatsSchema.findOne({ user: user._id, service: service._id });
-    const responseTime = Date.now() - startTime;
-    
-    if (currentHit) {
-      currentHit.hitCount++;
-      currentHit.lastHit = new Date();
-      currentHit.hitHistory.push({
-        timestamp: new Date(),
-        responseTime,
-        status: 'SUCCESS'
-      });
-      await currentHit.save();
-    } else {
-      await ServiceStatsSchema.create({ 
-        user: user._id, 
-        service: service._id, 
-        hitCount: 1,
-        lastHit: new Date(),
-        hitHistory: [{
-          timestamp: new Date(),
-          responseTime,
-          status: 'SUCCESS'
-        }]
-      });
-    }
     
     next();
   } catch (error: any) {
     console.error('API Key Middleware Error:', error);
     console.error('Error Stack:', error.stack);
     
-
-
     res.status(500).json({
       success: false,
       error_code: 500,
