@@ -6,7 +6,7 @@ import { api } from "../../services/api";
 interface AuthState {
   
     user: {
-      id: string;
+      _id: string;
       name: string;
       email: string;
       role: string;
@@ -48,7 +48,7 @@ export const authSlice = createSlice({
       state.isAuthenticated = false;
     },
     setUser: (state, action: PayloadAction<{ user: {
-      id: string;
+      _id: string;
       name: string;
       email: string;
       role: string;
@@ -70,7 +70,7 @@ export const authSlice = createSlice({
         state.accessToken = data.accessToken;
         state.refreshToken = data.refreshToken;
         state.user = {
-          id: data.user._id,
+          _id: data.user._id,
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,

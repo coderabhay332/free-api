@@ -20,7 +20,7 @@ const CreateAppModal: React.FC<CreateAppModalProps> = ({
   const [createApp] = useCreateAppMutation();
   const { auth } = useSelector((state: RootState) => state);
   console.log(auth)
-  console.log(auth?.user?.id)
+  console.log(auth?.user?._id)
   const handleCreateApp = async () => {
     if (!newAppName.trim()) {
       message.error('Please enter an app name');
@@ -32,7 +32,7 @@ const CreateAppModal: React.FC<CreateAppModalProps> = ({
     try {
       await createApp({
         name: newAppName,
-        user: auth?.user?.id || '',
+        user: auth?.user?._id || '',
     
       }).unwrap();
       message.success('App created successfully');

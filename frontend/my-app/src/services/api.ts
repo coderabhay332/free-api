@@ -150,12 +150,12 @@ export const api = createApi({
 
     // Analytics endpoints
     getUserAnalytics: builder.query<ApiResponse<any>, void>({
-      query: () => `/services/analytics/user`,
+      query: () => `/services/user/analytics`,
       providesTags: ["Analytics"],
     }),
 
     getAdminAnalytics: builder.query<ApiResponse<any>, void>({
-      query: () => `/services/analytics/admin`,
+      query: () => `/services/admin/analytics`,
       providesTags: ["Analytics"],
     }),
 

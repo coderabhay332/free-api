@@ -1,25 +1,10 @@
-import React, { Suspense, lazy } from 'react';
-import { Card, Statistic, Typography, Spin, Skeleton } from 'antd';
-import { ApiOutlined, DollarOutlined, CheckCircleOutlined, CloseCircleOutlined, UserOutlined } from '@ant-design/icons';
+import React from 'react';
+import { Card, Statistic, Typography, Spin, Table, Tabs } from 'antd';
+import { ApiOutlined, DollarOutlined, CheckCircleOutlined, CloseCircleOutlined, UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useGetUserAnalyticsQuery } from '../services/api';
 
 const { Title } = Typography;
-
-const StatCardSkeleton: React.FC = () => (
-  <Card 
-    style={{
-      borderRadius: '8px',
-      border: '1px solid #f0f0f0',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      marginBottom: '16px',
-      transition: 'all 0.2s ease'
-    }}
-    bodyStyle={{ padding: '24px' }}
-  >
-    <Skeleton.Input active size="small" style={{ width: 100, marginBottom: '8px' }} />
-    <Skeleton.Input active size="large" style={{ width: 150 }} />
-  </Card>
-);
+const { TabPane } = Tabs;
 
 const UserAnalytics: React.FC = () => {
   const { data, isLoading, error } = useGetUserAnalyticsQuery();
@@ -28,28 +13,16 @@ const UserAnalytics: React.FC = () => {
     return (
       <div style={{
         padding: '32px',
-        maxWidth: '800px',
+        maxWidth: '1000px',
         margin: '0 auto',
         backgroundColor: '#fafafa',
         minHeight: '100vh'
       }}>
-        <Skeleton.Input active size="large" style={{ width: 200, marginBottom: '32px' }} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
-            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-            <div style={{ width: '48%' }}><StatCardSkeleton /></div>
-          </div>
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
-            <div style={{ flex: 1 }}><StatCardSkeleton /></div>
-          </div>
-        </div>
+        <Spin size="large" style={{ display: 'flex', justifyContent: 'center', padding: '60px' }} />
       </div>
     );
   }
+  console.log("data", data);
 
   if (error) {
     return (
@@ -64,15 +37,22 @@ const UserAnalytics: React.FC = () => {
   }
 
   const analytics = data?.data || {
-    totalHits: 0,
-    totalSpent: 0,
-    subscribedServicesCount: 0,
-    successCount: 0,
-    failureCount: 0
+    summary: {
+      totalHits: 0,
+      totalSpent: 0,
+      subscribedServicesCount: 0,
+      successCount: 0,
+      failureCount: 0
+    },
+    serviceDetails: []
   };
 
-  const successRate = analytics.totalHits > 0 ? ((analytics.successCount / analytics.totalHits) * 100).toFixed(1) : 0;
-  const failureRate = analytics.totalHits > 0 ? ((analytics.failureCount / analytics.totalHits) * 100).toFixed(1) : 0;
+  const successRate = analytics.summary.totalHits > 0 
+    ? ((analytics.summary.successCount / analytics.summary.totalHits) * 100).toFixed(1) 
+    : 0;
+  const failureRate = analytics.summary.totalHits > 0 
+    ? ((analytics.summary.failureCount / analytics.summary.totalHits) * 100).toFixed(1) 
+    : 0;
 
   interface StatCardProps {
     title: string;
@@ -124,10 +104,99 @@ const UserAnalytics: React.FC = () => {
     </Card>
   );
 
+  const serviceDetailsColumns = [
+    {
+      title: 'Service Name',
+      dataIndex: 'serviceName',
+      key: 'serviceName',
+      render: (text: string) => (
+        <span style={{ fontWeight: '500', color: '#262626' }}>{text}</span>
+      )
+    },
+    {
+      title: 'Total Hits',
+      dataIndex: 'hits',
+      key: 'hits',
+      render: (value: number) => (
+        <span style={{ color: '#1890ff', fontWeight: '500' }}>
+          {value.toLocaleString()}
+        </span>
+      ),
+      sorter: (a: any, b: any) => a.hits - b.hits,
+    },
+    {
+      title: 'Amount Spent',
+      dataIndex: 'spent',
+      key: 'spent',
+      render: (value: number) => (
+        <span style={{ color: '#52c41a', fontWeight: '600' }}>
+          ${value.toFixed(2)}
+        </span>
+      ),
+      sorter: (a: any, b: any) => a.spent - b.spent,
+    },
+    {
+      title: 'Price/Call',
+      dataIndex: 'pricePerCall',
+      key: 'pricePerCall',
+      render: (value: number) => (
+        <span style={{ color: '#722ed1', fontWeight: '500' }}>
+          ${value.toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      title: 'Last Hit',
+      dataIndex: 'lastHit',
+      key: 'lastHit',
+      render: (value: string | null) => (
+        <span style={{ color: '#8c8c8c' }}>
+          {value ? new Date(value).toLocaleString() : 'Never'}
+        </span>
+      ),
+    }
+  ];
+
+  const recentHitsColumns = [
+    {
+      title: 'Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (value: string) => (
+        <span style={{ color: '#8c8c8c' }}>
+          {new Date(value).toLocaleString()}
+        </span>
+      )
+    },
+    {
+      title: 'Response Time',
+      dataIndex: 'responseTime',
+      key: 'responseTime',
+      render: (value: number) => (
+        <span style={{ color: '#1890ff', fontWeight: '500' }}>
+          {value}ms
+        </span>
+      )
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (value: string) => (
+        <span style={{ 
+          color: value === 'SUCCESS' ? '#52c41a' : '#ff4d4f',
+          fontWeight: '500'
+        }}>
+          {value}
+        </span>
+      )
+    }
+  ];
+
   return (
     <div style={{
       padding: '32px',
-      maxWidth: '800px',
+      maxWidth: '1000px',
       margin: '0 auto',
       backgroundColor: '#fafafa',
       minHeight: '100vh'
@@ -143,13 +212,13 @@ const UserAnalytics: React.FC = () => {
         Analytics Overview
       </Title>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+      <div style={{ marginBottom: '32px' }}>
         {/* API Hits and Spending */}
         <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
           <div style={{ flex: 1 }}>
             <StatCard
               title="API Hits"
-              value={analytics.totalHits.toLocaleString()}
+              value={analytics.summary.totalHits.toLocaleString()}
               prefix={<ApiOutlined />}
               color="#1890ff"
             />
@@ -157,32 +226,28 @@ const UserAnalytics: React.FC = () => {
           <div style={{ flex: 1 }}>
             <StatCard
               title="Total Spent"
-              value={analytics.totalSpent}
+              value={analytics.summary.totalSpent}
               prefix={<DollarOutlined />}
               color="#52c41a"
             />
           </div>
         </div>
 
-        {/* Services */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-          <div style={{ width: '48%' }}>
+        {/* Services and Success/Failure rates */}
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: 1 }}>
             <StatCard
               title="Active Services"
-              value={analytics.subscribedServicesCount}
+              value={analytics.summary.subscribedServicesCount}
               prefix={<UserOutlined />}
               color="#722ed1"
             />
           </div>
-        </div>
-
-        {/* Success and Failure rates */}
-        <div style={{ display: 'flex', gap: '16px' }}>
           <div style={{ flex: 1 }}>
             <StatCard
               title="Success Rate"
               value={`${successRate}%`}
-              suffix={<span style={{ fontSize: '14px', color: '#8c8c8c' }}>({analytics.successCount})</span>}
+              suffix={<span style={{ fontSize: '14px', color: '#8c8c8c' }}>({analytics.summary.successCount})</span>}
               prefix={<CheckCircleOutlined />}
               color="#52c41a"
             />
@@ -191,13 +256,91 @@ const UserAnalytics: React.FC = () => {
             <StatCard
               title="Failure Rate"
               value={`${failureRate}%`}
-              suffix={<span style={{ fontSize: '14px', color: '#8c8c8c' }}>({analytics.failureCount})</span>}
+              suffix={<span style={{ fontSize: '14px', color: '#8c8c8c' }}>({analytics.summary.failureCount})</span>}
               prefix={<CloseCircleOutlined />}
               color="#ff4d4f"
             />
           </div>
         </div>
       </div>
+
+      <Tabs defaultActiveKey="1">
+        <TabPane tab="Service Usage" key="1">
+          <Card 
+            style={{
+              borderRadius: '8px',
+              border: '1px solid #f0f0f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}
+            bodyStyle={{ padding: '24px' }}
+          >
+            <Table
+              dataSource={analytics.serviceDetails}
+              columns={serviceDetailsColumns}
+              rowKey="serviceId"
+              pagination={false}
+              style={{
+                backgroundColor: 'transparent'
+              }}
+              className="minimal-table"
+            />
+          </Card>
+        </TabPane>
+        <TabPane tab="Recent Activity" key="2">
+          {analytics.serviceDetails.map((service: any) => (
+            <Card
+              key={service.serviceId}
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ClockCircleOutlined />
+                  <span>{service.serviceName}</span>
+                </div>
+              }
+              style={{
+                borderRadius: '8px',
+                border: '1px solid #f0f0f0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                marginBottom: '16px'
+              }}
+              bodyStyle={{ padding: '24px' }}
+            >
+              {service.recentHits.length > 0 ? (
+                <Table
+                  dataSource={service.recentHits}
+                  columns={recentHitsColumns}
+                  rowKey="timestamp"
+                  pagination={false}
+                  style={{
+                    backgroundColor: 'transparent'
+                  }}
+                  className="minimal-table"
+                />
+              ) : (
+                <div style={{ textAlign: 'center', color: '#8c8c8c', padding: '20px' }}>
+                  No recent activity
+                </div>
+              )}
+            </Card>
+          ))}
+        </TabPane>
+      </Tabs>
+
+      <style>{`
+        .minimal-table .ant-table-thead > tr > th {
+          background-color: #fafafa;
+          border-bottom: 2px solid #f0f0f0;
+          font-weight: 600;
+          color: #595959;
+          padding: 16px;
+        }
+        .minimal-table .ant-table-tbody > tr > td {
+          padding: 16px;
+          border-bottom: 1px solid #f5f5f5;
+        }
+        .minimal-table .ant-table-tbody > tr:hover > td {
+          background-color: #fafafa;
+        }
+      `}</style>
     </div>
   );
 };

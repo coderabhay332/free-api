@@ -1,9 +1,10 @@
 import React from 'react';
-import { Card, Statistic, Typography, Table, Spin } from 'antd';
-import { UserOutlined, AppstoreOutlined, ApiOutlined, DollarOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Card, Statistic, Typography, Table, Spin, Tabs } from 'antd';
+import { UserOutlined, AppstoreOutlined, ApiOutlined, DollarOutlined, CheckCircleOutlined, CloseCircleOutlined, TeamOutlined, LineChartOutlined } from '@ant-design/icons';
 import { useGetAdminAnalyticsQuery } from '../services/api';
 
 const { Title } = Typography;
+const { TabPane } = Tabs;
 
 const AdminAnalytics: React.FC = () => {
   const { data, isLoading } = useGetAdminAnalyticsQuery();
@@ -22,18 +23,19 @@ const AdminAnalytics: React.FC = () => {
   }
 
   const analytics = data?.data || {
-    totalUsers: 0,
-    totalApps: 0,
-    totalServices: 0,
-    totalHits: 0,
-    totalRevenue: 0,
-    successCount: 0,
-    failureCount: 0,
-    topServices: []
+    summary: {
+      totalUsers: 0,
+      totalApps: 0,
+      totalServices: 0,
+      totalHits: 0,
+      totalRevenue: 0,
+      totalUniqueUsers: 0,
+      averageHitsPerService: 0,
+      averageRevenuePerService: 0
+    },
+    topServices: [],
+    serviceDetails: []
   };
-
-  const successRate = analytics.totalHits > 0 ? ((analytics.successCount / analytics.totalHits) * 100).toFixed(1) : 0;
-  const failureRate = analytics.totalHits > 0 ? ((analytics.failureCount / analytics.totalHits) * 100).toFixed(1) : 0;
 
   type StatCardProps = {
     title: string;
@@ -85,10 +87,10 @@ const AdminAnalytics: React.FC = () => {
     </Card>
   );
 
-  const columns = [
+  const topServicesColumns = [
     {
       title: 'Service Name',
-      dataIndex: ['service', 'name'],
+      dataIndex: 'name',
       key: 'name',
       render: (text: string) => (
         <span style={{ fontWeight: '500', color: '#262626' }}>{text}</span>
@@ -96,9 +98,9 @@ const AdminAnalytics: React.FC = () => {
     },
     {
       title: 'Total Hits',
-      dataIndex: 'hitCount',
-      key: 'hitCount',
-      sorter: (a: any, b: any) => a.hitCount - b.hitCount,
+      dataIndex: 'hits',
+      key: 'hits',
+      sorter: (a: any, b: any) => a.hits - b.hits,
       render: (value: number) => (
         <span style={{ color: '#1890ff', fontWeight: '500' }}>
           {value.toLocaleString()}
@@ -116,12 +118,79 @@ const AdminAnalytics: React.FC = () => {
       ),
       sorter: (a: any, b: any) => a.revenue - b.revenue,
     },
+    {
+      title: 'Unique Users',
+      dataIndex: 'uniqueUsers',
+      key: 'uniqueUsers',
+      render: (value: number) => (
+        <span style={{ color: '#722ed1', fontWeight: '500' }}>
+          {value}
+        </span>
+      ),
+      sorter: (a: any, b: any) => a.uniqueUsers - b.uniqueUsers,
+    }
+  ];
+
+  const serviceDetailsColumns = [
+    {
+      title: 'Service Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string) => (
+        <span style={{ fontWeight: '500', color: '#262626' }}>{text}</span>
+      )
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+    },
+    {
+      title: 'Price/Call',
+      dataIndex: 'pricePerCall',
+      key: 'pricePerCall',
+      render: (value: number) => (
+        <span style={{ color: '#52c41a', fontWeight: '600' }}>
+          ${value.toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      title: 'Total Hits',
+      dataIndex: ['stats', 'totalHits'],
+      key: 'totalHits',
+      render: (value: number) => (
+        <span style={{ color: '#1890ff', fontWeight: '500' }}>
+          {value.toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      title: 'Revenue',
+      dataIndex: ['stats', 'totalRevenue'],
+      key: 'totalRevenue',
+      render: (value: number) => (
+        <span style={{ color: '#52c41a', fontWeight: '600' }}>
+          ${value.toFixed(2)}
+        </span>
+      ),
+    },
+    {
+      title: 'Avg Response Time',
+      dataIndex: ['stats', 'averageResponseTime'],
+      key: 'averageResponseTime',
+      render: (value: number) => (
+        <span style={{ color: '#722ed1', fontWeight: '500' }}>
+          {value.toFixed(0)}ms
+        </span>
+      ),
+    }
   ];
 
   return (
     <div style={{
       padding: '32px',
-      maxWidth: '1000px',
+      maxWidth: '1200px',
       margin: '0 auto',
       backgroundColor: '#fafafa',
       minHeight: '100vh'
@@ -137,14 +206,13 @@ const AdminAnalytics: React.FC = () => {
         Admin Dashboard
       </Title>
 
-      
       <div style={{ marginBottom: '32px' }}>
         {/* First row - Core metrics */}
         <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
           <div style={{ flex: 1 }}>
             <StatCard
               title="Total Users"
-              value={analytics.totalUsers.toLocaleString()}
+              value={analytics.summary.totalUsers.toLocaleString()}
               prefix={<UserOutlined />}
               color="#722ed1"
             />
@@ -152,7 +220,7 @@ const AdminAnalytics: React.FC = () => {
           <div style={{ flex: 1 }}>
             <StatCard
               title="Total Apps"
-              value={analytics.totalApps.toLocaleString()}
+              value={analytics.summary.totalApps.toLocaleString()}
               prefix={<AppstoreOutlined />}
               color="#13c2c2"
             />
@@ -160,7 +228,7 @@ const AdminAnalytics: React.FC = () => {
           <div style={{ flex: 1 }}>
             <StatCard
               title="Total Services"
-              value={analytics.totalServices.toLocaleString()}
+              value={analytics.summary.totalServices.toLocaleString()}
               prefix={<ApiOutlined />}
               color="#1890ff"
             />
@@ -171,8 +239,8 @@ const AdminAnalytics: React.FC = () => {
         <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
           <div style={{ flex: 1 }}>
             <StatCard
-              title="API Hits"
-              value={analytics.totalHits.toLocaleString()}
+              title="Total API Hits"
+              value={analytics.summary.totalHits.toLocaleString()}
               prefix={<ApiOutlined />}
               color="#1890ff"
             />
@@ -180,67 +248,86 @@ const AdminAnalytics: React.FC = () => {
           <div style={{ flex: 1 }}>
             <StatCard
               title="Total Revenue"
-              value={analytics.totalRevenue}
+              value={analytics.summary.totalRevenue}
+              prefix={<DollarOutlined />}
+              color="#52c41a"
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <StatCard
+              title="Unique Users"
+              value={analytics.summary.totalUniqueUsers.toLocaleString()}
+              prefix={<TeamOutlined />}
+              color="#722ed1"
+            />
+          </div>
+        </div>
+
+        {/* Third row - Averages */}
+        <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ flex: 1 }}>
+            <StatCard
+              title="Avg Hits/Service"
+              value={analytics.summary.averageHitsPerService.toFixed(1)}
+              prefix={<LineChartOutlined />}
+              color="#1890ff"
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <StatCard
+              title="Avg Revenue/Service"
+              value={`$${analytics.summary.averageRevenuePerService.toFixed(2)}`}
               prefix={<DollarOutlined />}
               color="#52c41a"
             />
           </div>
         </div>
-
-        {/* Third row - Success/Failure rates */}
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <div style={{ flex: 1 }}>
-            <StatCard
-              title="Success Rate"
-              value={`${successRate}%`}
-              suffix={<span style={{ fontSize: '14px', color: '#8c8c8c' }}>({analytics.successCount.toLocaleString()})</span>}
-              prefix={<CheckCircleOutlined />}
-              color="#52c41a"
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <StatCard
-              title="Failure Rate"
-              value={`${failureRate}%`}
-              suffix={<span style={{ fontSize: '14px', color: '#8c8c8c' }}>({analytics.failureCount.toLocaleString()})</span>}
-              prefix={<CloseCircleOutlined />}
-              color="#ff4d4f"
-            />
-          </div>
-        </div>
       </div>
 
-      {/* Top Services Table */}
-      <Card 
-        style={{
-          borderRadius: '8px',
-          border: '1px solid #f0f0f0',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-        }}
-        bodyStyle={{ padding: '24px' }}
-      >
-        <Title 
-          level={3} 
-          style={{
-            marginBottom: '20px',
-            color: '#262626',
-            fontWeight: '600',
-            fontSize: '18px'
-          }}
-        >
-          Top Performing Services
-        </Title>
-        <Table
-          dataSource={analytics.topServices}
-          columns={columns}
-          rowKey="_id"
-          pagination={false}
-          style={{
-            backgroundColor: 'transparent'
-          }}
-          className="minimal-table"
-        />
-      </Card>
+      <Tabs defaultActiveKey="1">
+        <TabPane tab="Top Services" key="1">
+          <Card 
+            style={{
+              borderRadius: '8px',
+              border: '1px solid #f0f0f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}
+            bodyStyle={{ padding: '24px' }}
+          >
+            <Table
+              dataSource={analytics.topServices}
+              columns={topServicesColumns}
+              rowKey="name"
+              pagination={false}
+              style={{
+                backgroundColor: 'transparent'
+              }}
+              className="minimal-table"
+            />
+          </Card>
+        </TabPane>
+        <TabPane tab="Service Details" key="2">
+          <Card 
+            style={{
+              borderRadius: '8px',
+              border: '1px solid #f0f0f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+            }}
+            bodyStyle={{ padding: '24px' }}
+          >
+            <Table
+              dataSource={analytics.serviceDetails}
+              columns={serviceDetailsColumns}
+              rowKey="serviceId"
+              pagination={false}
+              style={{
+                backgroundColor: 'transparent'
+              }}
+              className="minimal-table"
+            />
+          </Card>
+        </TabPane>
+      </Tabs>
 
       <style>{`
         .minimal-table .ant-table-thead > tr > th {

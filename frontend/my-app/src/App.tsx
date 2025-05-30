@@ -24,7 +24,7 @@ function App() {
         </AuthLayout>
       } />
       <Route path="/admin/analytics" element={
-         <AuthLayout>
+         <AuthLayout requireAdmin>
           <AdminAnalytics />
         </AuthLayout>
       } />
