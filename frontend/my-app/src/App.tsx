@@ -8,8 +8,8 @@ import RegisterForm from './pages/Register';
 
 import AppPage from './pages/AppPage';
 import AuthLayout from './layouts/auth';
-import AdminAnalytics from './components/AdminAnalytics';
-import UserAnalytics from './components/UserAnalytics';
+import AdminAnalytics from './pages/AdminAnalytics';
+import UserAnalytics from './pages/UserAnalytics';
 function App() {
   const navigate = useNavigate();
 
