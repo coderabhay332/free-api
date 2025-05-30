@@ -4,17 +4,14 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-
 RUN npm install
-
 
 COPY . .
 
-
-RUN npm run start
+RUN npx tsc
 
 
 EXPOSE 5000
 
 
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "start"]

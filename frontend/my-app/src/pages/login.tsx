@@ -69,7 +69,7 @@ export default function LoginForm() {
       dispatch(setTokens({ accessToken, refreshToken }));
 
       // Redirect based on role
-      const redirectPath = "/admin/dashboard";
+      const redirectPath = loginResponse.data.user.role === 'ADMIN' ? "/user/apps" : "/user/apps";
       
       navigate(redirectPath, { replace: true });
       toast.success("Login successful!");

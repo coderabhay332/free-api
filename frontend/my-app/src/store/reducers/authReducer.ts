@@ -4,14 +4,23 @@ import { api } from "../../services/api";
 
 // Define a type for the slice state
 interface AuthState {
-  accessToken: string;
-  refreshToken: string;
-  isAuthenticated: boolean;
-  loading: boolean;
-}
+  
+    user: {
+      _id: string;
+      name: string;
+      email: string;
+      role: string;
+    } | null;
+    accessToken: string;
+    refreshToken: string;
+    isAuthenticated: boolean;
+    loading: boolean;
+  } 
+
 
 // Define the initial state using that type
 const initialState: AuthState = {
+  user: null,
   accessToken: localStorage.getItem('access_token') ?? "",
   refreshToken: localStorage.getItem('refresh_token') ?? "",
   isAuthenticated: Boolean(localStorage.getItem('access_token')),
@@ -38,6 +47,14 @@ export const authSlice = createSlice({
       state.refreshToken = "";
       state.isAuthenticated = false;
     },
+    setUser: (state, action: PayloadAction<{ user: {
+      _id: string;
+      name: string;
+      email: string;
+      role: string;
+    } | null }>) => {
+      state.user = action.payload.user;
+    },
 
   },
   extraReducers: (builder) => {
@@ -52,6 +69,12 @@ export const authSlice = createSlice({
         localStorage.setItem('refresh_token', data.refreshToken);
         state.accessToken = data.accessToken;
         state.refreshToken = data.refreshToken;
+        state.user = {
+          _id: data.user._id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+        };
         state.isAuthenticated = true;
         state.loading = false;
         return state;
@@ -59,6 +82,7 @@ export const authSlice = createSlice({
       .addMatcher(api.endpoints.login.matchRejected, (state) => {
         state.accessToken = '';
         state.refreshToken = '';
+        state.user = null;
         state.isAuthenticated = false;
         state.loading = false;
         return state;
@@ -77,6 +101,6 @@ export const authSlice = createSlice({
   
 });
 
-export const { setLoading, setTokens, resetTokens } = authSlice.actions;
+export const { setLoading, setTokens, resetTokens, setUser } = authSlice.actions;
 
 export default authSlice.reducer;
