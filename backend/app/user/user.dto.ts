@@ -1,7 +1,8 @@
 import { ObjectId } from "mongoose";
+import { BaseSchema } from "../common/dto/base.dto";
 
-export interface IUser {
-  id: string;
+export interface IUser extends BaseSchema {
+
   name: string;
   email: string;
   password: string;
@@ -12,7 +13,5 @@ export interface IUser {
     freeCredits: number;
   };
   apps?: ObjectId[];
-  createdAt?: string;
-  updatedAt?: string;
   
 }

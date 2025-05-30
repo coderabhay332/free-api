@@ -16,7 +16,7 @@ export const trackResponseTime = (req: Request, res: Response, next: NextFunctio
       void (async () => {
         try {
           const currentHit = await ServiceStatsSchema.findOne({ 
-            user: req.user?.id, 
+            user: req.user?._id, 
             service: req.service._id 
           });
           
@@ -31,7 +31,7 @@ export const trackResponseTime = (req: Request, res: Response, next: NextFunctio
             await currentHit.save();
           } else {
             await ServiceStatsSchema.create({ 
-              user: req.user?.id, 
+              user: req.user?._id, 
               service: req.service._id, 
               hitCount: 1,
               lastHit: new Date(),

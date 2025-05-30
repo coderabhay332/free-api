@@ -23,11 +23,12 @@ export const updateUser = async (id: string, data: IUser) => {
   return result;
 };
 
-export const me = async (user: any) => {
-  if (!user || !user.id) {
+export const me = async (user: IUser) => {
+  console.log("user", user._id);
+  if (!user || !user._id) {
     throw new Error('User not authenticated');
   }
-  const result = await UserSchema.findById(user.id).select('-password').lean();
+  const result = await UserSchema.findById(user._id).select('-password').lean();
   if (!result) {
     throw new Error('User not found');
   }
@@ -219,7 +220,7 @@ export const unblockApi = async (userId: string, serviceId: string, appId: strin
 };
 
 export const updateUserToken = async (user: IUser, refreshToken: string) => {
-  await UserSchema.findByIdAndUpdate(user.id, { refreshToken: refreshToken });
+  await UserSchema.findByIdAndUpdate(user._id, { refreshToken: refreshToken });
 }
 
 export const refreshToken = async (refreshToken: string) => {

@@ -5,7 +5,7 @@ import { type Request, type Response } from "express";
 import { type IUser } from "../user/user.dto";
 
 export const createApp = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req.user as IUser)?.id;
+  const userId = (req.user as IUser)?._id;
   const result = await appService.createApp(userId,req.body);
   res.send(createResponse(result, "App created sucssefully"));
 });

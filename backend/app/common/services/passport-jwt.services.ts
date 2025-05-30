@@ -104,7 +104,7 @@ export const createUserTokens = (user: IUser) => {
   const refreshTokenSecret = process.env.JWT_REFRESH_SECRET ?? '';
 
   const payload = {
-    id: user.id,      
+    _id: user._id,     
     email: user.email,
     role: user.role,
   };

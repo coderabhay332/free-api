@@ -47,7 +47,7 @@ export const getAllService = asyncHandler(
 
 export const getWeather = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getWeather(
-    (req.user as IUser)?.id,
+    (req.user as IUser)?._id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -55,7 +55,7 @@ export const getWeather = asyncHandler(async (req: Request, res: Response) => {
 
 export const getRandomUser = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getRandomUser(
-    (req.user as IUser)?.id,
+    (req.user as IUser)?._id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -63,7 +63,7 @@ export const getRandomUser = asyncHandler(async (req: Request, res: Response) =>
 
 export const getJoke = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getJoke(
-    (req.user as IUser)?.id,
+    (req.user as IUser)?._id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -71,7 +71,7 @@ export const getJoke = asyncHandler(async (req: Request, res: Response) => {
 
 export const getQuote = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getQuote(
-    (req.user as IUser)?.id,
+    (req.user as IUser)?._id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -79,7 +79,7 @@ export const getQuote = asyncHandler(async (req: Request, res: Response) => {
 
 export const getNews = asyncHandler(async (req: Request, res: Response) => {
   const result = await serviceService.getNews(
-    (req.user as IUser)?.id,
+    (req.user as IUser)?._id,
     (req.service as any)._id
   );
   res.send(createResponse(result));
@@ -92,7 +92,7 @@ export const getUserServiceAnalytics = asyncHandler(async (req: Request, res: Re
     throw createError(401, "User not authenticated");
   }
 
-  const userId = req.user.id;
+  const userId = req.user._id;
   if (!userId) {
     throw createError(401, "User ID not found");
   }
